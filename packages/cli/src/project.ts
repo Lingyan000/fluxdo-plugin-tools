@@ -23,8 +23,8 @@ const validate=new Ajv({allErrors:true,strict:false}).compile(schema);
 export interface Manifest {
   schema:number;apiVersion:number;id:string;name:string;version:string;author:string;
   ui:string;script:string;requiredFeatures?:string[];
-  permissions:{network:string[];connect?:string[];credentials?:Record<string,{requests:{origin:string}[]}>};
-  card?:{widget:string};pages?:{id:string;widget:string}[];links?:{page:string}[];
+  permissions:{network:string[];forum?:('profiles'|'activity'|'following')[];connect?:string[];credentials?:Record<string,{requests:{origin:string}[]}>};
+  card?:{widget:string};pages?:{id:string;widget:string;presentation?:string;navigation?:{label:string;icon?:string}}[];links?:{page:string}[];
 }
 export interface Project { root:string;manifest:Manifest;entry:string;ui:string }
 function fail(message:string):never {throw new Error(message);}
@@ -47,8 +47,11 @@ export function checkManifest(raw:unknown):asserts raw is Manifest {
   resourcePath(m.ui);resourcePath(m.script);
   if(m.ui===m.script)fail('界面与脚本须使用不同文件');
   if(m.ui==='plugin.json'||m.script==='plugin.json')fail('资源文件不能覆盖清单');
+  if(m.permissions.forum && m.schema<11)fail('论坛读取权限需要 schema 11');
+  if(m.permissions.forum?.length&&!m.requiredFeatures?.includes('forumRead'))fail('论坛读取须声明 forumRead');
+  if(m.pages?.some(p=>p.navigation)&&!m.requiredFeatures?.includes('navigationEntries'))fail('导航入口须声明 navigationEntries');
   const ids=new Set<string>();
-  for(const page of m.pages??[]){if(ids.has(page.id))fail('页面 ID 重复');ids.add(page.id);}
+  for(const page of m.pages??[]){if(ids.has(page.id))fail('页面 ID 重复');ids.add(page.id);if(page.navigation&&(m.schema<11||page.presentation==='modal'))fail('导航入口需要 schema 11 的普通页面');}
   for(const link of m.links??[])if(!ids.has(link.page))fail('链接指向未声明的页面');
   const endpoints=[...(m.permissions.connect??[]),...Object.values(m.permissions.credentials??{}).flatMap(v=>v.requests.map(r=>r.origin))];
   for(const endpoint of endpoints){

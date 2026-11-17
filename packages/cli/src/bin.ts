@@ -10,6 +10,7 @@ import {createDeviceServer} from './dev/session.js';
 import {loadProject,typecheck,buildProject,packProject,createMarketEntry} from './project.js';
 
 const metadata=JSON.parse(await readFile(new URL('../package.json',import.meta.url),'utf8'));
+const contract=JSON.parse(await readFile(new URL('./contract.json',import.meta.url),'utf8'));
 const help=`FluxDO 插件工具
   fluxdo check [目录]         检查类型、清单及界面引用
   fluxdo build [目录]         构建宿主可加载的独立脚本
@@ -32,7 +33,7 @@ try{
     switch(command){
       case 'doctor':
         if(!satisfies(process.versions.node,metadata.engines.node))throw new Error('需要 Node 24.11 或以上版本');
-        console.log(`Node ${process.version}；Vite 模块服务可用；SDK API 2 / schema 10`);break;
+        console.log(`Node ${process.version}；Vite 模块服务可用；SDK API ${contract.apiVersion} / schema ${contract.manifestSchemas.join(', ')}`);break;
       case 'check':await typecheck(await loadProject(root));console.log('类型、清单和界面引用检查通过');break;
       case 'build':await buildProject(root);console.log('已构建 '+resolve(root,'dist'));break;
       case 'pack':console.log(JSON.stringify(await packProject(root),null,2));break;

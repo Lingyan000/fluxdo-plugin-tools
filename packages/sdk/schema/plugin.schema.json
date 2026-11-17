@@ -11,7 +11,8 @@
     "schema": {
       "enum": [
         9,
-        10
+        10,
+        11
       ]
     },
     "apiVersion": {
@@ -187,6 +188,18 @@
             ],
             "additionalProperties": false
           }
+        },
+        "forum": {
+          "type": "array",
+          "maxItems": 3,
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "profiles",
+              "activity",
+              "following"
+            ]
+          }
         }
       },
       "required": [
@@ -240,6 +253,25 @@
           },
           "scroll": {
             "type": "boolean"
+          },
+          "navigation": {
+            "type": "object",
+            "properties": {
+              "label": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 12
+              },
+              "icon": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 40
+              }
+            },
+            "required": [
+              "label"
+            ],
+            "additionalProperties": false
           }
         },
         "required": [
@@ -292,7 +324,9 @@
           "gridLayouts",
           "virtualGrid",
           "confirmationDialog",
-          "nativeExecutionLimits"
+          "nativeExecutionLimits",
+          "navigationEntries",
+          "forumRead"
         ]
       },
       "uniqueItems": true
@@ -342,7 +376,10 @@
       "then": {
         "properties": {
           "schema": {
-            "const": 10
+            "enum": [
+              10,
+              11
+            ]
           }
         }
       }

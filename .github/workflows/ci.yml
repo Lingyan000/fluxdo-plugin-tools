@@ -75,4 +75,4 @@ jobs:
         run: node --test tool/plugin_tools/native.test.mjs
       - name: Run App pairing, updates and isolation regression
         working-directory: app
-        run: flutter test test/modules/metaverse/metaverse_development_test.dart test/modules/metaverse/metaverse_development_connection_test.dart test/modules/metaverse/metaverse_development_integration_test.dart
+        run: flutter test test/modules/metaverse/metaverse_navigation_forum_test.dart test/modules/metaverse/metaverse_navigation_ui_test.dart test/modules/metaverse/metaverse_development_test.dart test/modules/metaverse/metaverse_development_connection_test.dart test/modules/metaverse/metaverse_development_integration_test.dart
