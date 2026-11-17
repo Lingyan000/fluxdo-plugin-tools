@@ -60,6 +60,7 @@ jobs:
           New-Item -ItemType Directory -Force app/assets/certs | Out-Null
           "FLUXDO_PLUGIN_TOOLS=$((Resolve-Path tools).Path)" >> $env:GITHUB_ENV
           "FLUXDO_APP=$((Resolve-Path app).Path)" >> $env:GITHUB_ENV
+          "FLUXDO_DART=$env:FLUTTER_ROOT/bin/cache/dart-sdk/bin/dart.exe" >> $env:GITHUB_ENV
       - name: Check SDK, production parser and component contracts
         working-directory: app
         run: node tool/plugin_tools/check_sdk_contract.mjs
