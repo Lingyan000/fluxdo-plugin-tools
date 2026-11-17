@@ -1,0 +1,9 @@
+import assert from 'node:assert/strict';
+import {readFile} from 'node:fs/promises';
+import {createHash} from 'node:crypto';
+const contract=JSON.parse(await readFile(new URL('../contract.json',import.meta.url),'utf8'));
+const types=(await readFile(new URL('../types/global.d.ts',import.meta.url),'utf8')).replaceAll('\r\n','\n');
+assert.equal(createHash('sha256').update(types).digest('hex'),contract.typesSha256,'SDK 类型与契约摘要不同步');
+const schema=JSON.parse(await readFile(new URL('../schema/plugin.schema.json',import.meta.url),'utf8'));
+assert.deepEqual(schema.properties.requiredFeatures.items.enum,contract.features);
+console.log('SDK 契约与声明校验通过');

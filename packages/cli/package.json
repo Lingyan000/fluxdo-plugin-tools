@@ -1,0 +1,50 @@
+{
+  "version": "0.1.0",
+  "type": "module",
+  "license": "GPL-3.0-only",
+  "engines": {
+    "node": ">=24.11.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Lingyan000/fluxdo-plugin-tools.git",
+    "directory": "packages/cli"
+  },
+  "name": "@fluxdo/plugin-cli",
+  "files": [
+    "dist",
+    "templates",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "check": "tsc --noEmit",
+    "build": "tsdown && node tools/build-runner.mjs"
+  },
+  "bin": {
+    "fluxdo": "dist/bin.mjs"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/project.d.mts",
+      "import": "./dist/project.mjs"
+    },
+    "./dev": {
+      "types": "./dist/dev/server.d.mts",
+      "import": "./dist/dev/server.mjs"
+    },
+    "./runner": "./dist/dev/runner.js"
+  },
+  "dependencies": {
+    "vite": "8.3.8",
+    "fast-text-encoding": "1.0.6",
+    "core-js-pure": "3.51.0",
+    "semver": "7.8.6",
+    "ajv": "8.20.0",
+    "typescript": "7.0.2"
+  },
+  "devDependencies": {
+    "@types/semver": "7.7.1",
+    "@fluxdo/plugin-sdk": "workspace:*"
+  }
+}

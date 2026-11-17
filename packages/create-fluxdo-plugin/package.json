@@ -1,0 +1,30 @@
+{
+  "version": "0.1.0",
+  "type": "module",
+  "license": "GPL-3.0-only",
+  "engines": {
+    "node": ">=24.11.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Lingyan000/fluxdo-plugin-tools.git",
+    "directory": "packages/create-fluxdo-plugin"
+  },
+  "name": "create-fluxdo-plugin",
+  "files": [
+    "dist",
+    "templates",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "check": "tsc --noEmit",
+    "build": "tsdown"
+  },
+  "bin": {
+    "create-fluxdo-plugin": "dist/bin.mjs"
+  },
+  "dependencies": {
+    "@clack/prompts": "1.9.0"
+  }
+}
