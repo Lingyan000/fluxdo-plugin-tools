@@ -7,14 +7,15 @@
     "check": "fluxdo check",
     "build": "fluxdo build",
     "pack:plugin": "fluxdo pack",
-    "dev": "fluxdo dev --stdio",
-    "doctor": "fluxdo doctor"
+    "dev": "fluxdo dev",
+    "doctor": "fluxdo doctor",
+    "test": "fluxdo test"
   },
   "engines": {
     "node": ">=24.11.0"
   },
   "devDependencies": {
-    "@fluxdo/plugin-cli": "https://github.com/Lingyan000/fluxdo-plugin-tools/releases/download/v0.1.0/fluxdo-plugin-cli-0.1.0.tgz",
-    "@fluxdo/plugin-sdk": "https://github.com/Lingyan000/fluxdo-plugin-tools/releases/download/v0.1.0/fluxdo-plugin-sdk-0.1.0.tgz"
+    "@fluxdo/plugin-cli": "https://github.com/Lingyan000/fluxdo-plugin-tools/releases/download/v0.2.0/fluxdo-plugin-cli-0.2.0.tgz",
+    "@fluxdo/plugin-sdk": "https://github.com/Lingyan000/fluxdo-plugin-tools/releases/download/v0.2.0/fluxdo-plugin-sdk-0.2.0.tgz"
   }
 }

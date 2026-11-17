@@ -1,5 +1,5 @@
 {
-  "version": "0.1.0",
+  "version": "0.2.0",
   "type": "module",
   "license": "GPL-3.0-only",
   "engines": {
@@ -17,7 +17,8 @@
     "schema",
     "contract.json",
     "README.md",
-    "LICENSE"
+    "LICENSE",
+    "testing"
   ],
   "exports": {
     ".": {
@@ -27,7 +28,12 @@
     "./contract": "./contract.json",
     "./dev": {
       "types": "./types/dev.d.ts"
-    }
+    },
+    "./testing": {
+      "types": "./testing/index.d.ts",
+      "import": "./testing/index.mjs"
+    },
+    "./components": "./schema/components.json"
   },
   "scripts": {
     "check": "node --check tools/check.mjs && node tools/check.mjs",

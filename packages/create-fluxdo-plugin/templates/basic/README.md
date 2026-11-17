@@ -1,21 +1,24 @@
 # FluxDO 原生插件
 
-使用 Node 24.11+，无需安装 Flutter 或克隆 FluxDO。
+使用 Node 24.11+，无需安装 Flutter 或克隆应用。
 
-```sh
+~~~sh
 pnpm install
 pnpm check
-pnpm build
+pnpm test
+pnpm dev
+# 准备发布
 pnpm pack:plugin
-```
+~~~
 
-在 FluxDO 的插件管理中导入 dist 内的 `.fluxplugin`。示例卡片提供计数、原生确认与提示。
+在 App「插件管理 → 开发中心 → 连接开发工具」粘贴配对地址，审阅权限并预览。Android 先通过 USB 运行 adb reverse tcp:5174 tcp:5174，桌面同机直接连接。需要支持开发会话的 FluxDO 版本。
 
-- `plugin.json`：身份、页面、权限和所需宿主能力。
-- `src/main.ts`：业务和事件处理。不要使用 Node/DOM API。
-- `ui.rfwtxt`：原生 UI 描述；完整语法与组件参数由宿主安装校验。
-- `fluxdo.config.json`：源码入口。
+- plugin.json：身份、页面、权限与能力。
+- src/main.ts：事件与业务，不使用 Node/DOM API。
+- ui.rfwtxt：原生界面；CLI 校验语法和顶层组件参数名。
+- test/plugin.test.mjs：使用 SDK 模拟确认、存储、网络等宿主能力；不会访问真实账号。
+- fluxdo.config.json：源码入口。
 
-工具与 SDK 暂通过固定版本 GitHub Release 包分发，锁定依赖后请提交 lockfile。`pnpm dev` 当前提供标准流模块协议，供宿主适配器/测试连接；手机扫码连接尚未接入，不能直接用它连接已发布的 App。
+保存 TS/RFW 自动更新，正在进行的操作结束后生效。需要完整重启时在 App 确认。开发实例与正式插件隔离，退出会清空临时数据。
 
-构建不执行业务脚本或自动访问真实账号。是否增加授权、付款权限应由实际业务决定。
+发布包在 dist/*.fluxplugin；fluxdo market-entry --repository https://github.com/OWNER/REPO --tag VERSION 可生成市场条目草稿，补充说明与截图后提交目录仓库。工具与 SDK 固定使用同一版本 GitHub Release，提交 lockfile 以便复现。

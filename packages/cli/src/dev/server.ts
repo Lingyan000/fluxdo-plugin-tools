@@ -2,6 +2,7 @@ import {EventEmitter} from 'node:events';
 import {builtinModules} from 'node:module';
 import {realpath} from 'node:fs/promises';
 import {resolve} from 'node:path';
+import {TraceMap, originalPositionFor} from '@jridgewell/trace-mapping';
 import {createServer, DevEnvironment} from 'vite';
 import type {HotChannel, HotChannelClient, HotPayload, Plugin} from 'vite';
 
@@ -34,6 +35,7 @@ export function neutralImports(): Plugin {
 export async function createPluginDevServer(options: PluginDevServerOptions) {
   const root = await realpath(resolve(options.root));
   const events = new EventEmitter();
+  const maps = new Map<string, TraceMap>();
   const clients = new Set<HotChannelClient>();
   let closed = false;
   const report = options.onError ?? (() => {});
@@ -66,6 +68,19 @@ export async function createPluginDevServer(options: PluginDevServerOptions) {
   const environment = server.environments.fluxdo!;
   return {
     root,
+    watch(listener: (file: string) => void) {
+      server.watcher.on('change', listener).on('add', listener).on('unlink', listener);
+    },
+    mapStack(stack: string): string {
+      return stack.replace(/((?:[A-Za-z]:)?[^\s()@]+\.[cm]?[jt]sx?):(\d+):(\d+)/g, (frame, file, line, column) => {
+        const map = maps.get(file.replace(/^file:\/\//, ''));
+        if (!map) return frame;
+        try {
+          const point = originalPositionFor(map, {line:Number(line),column:Math.max(0,Number(column)-1)});
+          return point.source && point.line ? `${point.source}:${point.line}:${(point.column??0)+1}` : frame;
+        } catch { return frame; }
+      });
+    },
     connect(send: (payload: HotPayload) => void): DevConnection {
       if (closed) throw new Error('开发模块服务已关闭');
       let active = true;
@@ -92,6 +107,16 @@ export async function createPluginDevServer(options: PluginDevServerOptions) {
             }
             // 不把任意方法名交给 Vite 的内部调用分发表。
             void environment.hot.handleInvoke(payload as HotPayload).then(response => {
+              const result = (response as any)?.result;
+              if (result?.code && typeof result.id === 'string') {
+                const encoded = /sourceMappingURL=data:application\/json[^,]*;base64,([^\s]+)/.exec(result.code)?.[1];
+                if (encoded) {
+                  try {
+                    if (maps.size >= 256) maps.delete(maps.keys().next().value!);
+                    maps.set(result.id.replace(/^file:\/\//,''), new TraceMap(JSON.parse(Buffer.from(encoded,'base64').toString())));
+                  } catch { /* 无映射时保留生成位置 */ }
+                }
+              }
               client.send({type: 'custom', event: 'vite:invoke', data: {
                 name: request.name, id: request.id!.toString().replace('send:', 'response:'), data: response,
               }});

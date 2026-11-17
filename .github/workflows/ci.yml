@@ -19,3 +19,59 @@ jobs:
       - run: npm install --global pnpm@12.21.0
       - run: pnpm install --frozen-lockfile
       - run: pnpm test
+
+  native-host:
+    runs-on: windows-latest
+    timeout-minutes: 25
+    steps:
+      - run: git config --global core.symlinks true
+      - uses: actions/checkout@v4
+        with:
+          path: tools
+          persist-credentials: false
+      - name: Read compatible host revision
+        id: host
+        working-directory: tools
+        run: node -e "const c=require('./packages/sdk/contract.json').hostReference; for(const [k,v] of Object.entries(c)) require('node:fs').appendFileSync(process.env.GITHUB_OUTPUT,k+'='+v+'\n')"
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ steps.host.outputs.repository }}
+          ref: ${{ steps.host.outputs.commit }}
+          path: app
+          submodules: recursive
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.50.0'
+          cache: true
+      - run: npm install --global pnpm@12.21.0
+      - run: pnpm install --frozen-lockfile
+        working-directory: tools
+      - run: pnpm build
+        working-directory: tools
+      - name: Prepare host dependencies and localization
+        working-directory: app
+        run: dart tool/project_prep.dart test
+      - name: Prepare test assets and tool path
+        run: |
+          New-Item -ItemType Directory -Force app/assets/certs | Out-Null
+          "FLUXDO_PLUGIN_TOOLS=$((Resolve-Path tools).Path)" >> $env:GITHUB_ENV
+          "FLUXDO_APP=$((Resolve-Path app).Path)" >> $env:GITHUB_ENV
+      - name: Check SDK, production parser and component contracts
+        working-directory: app
+        run: node tool/plugin_tools/check_sdk_contract.mjs
+      - name: Check generated component parameters
+        working-directory: app
+        run: dart run tool/plugin_tools/export_components.dart test/fixtures/metaverse/sdk/components.json --check
+      - name: Validate service UI using shipped parser
+        working-directory: tools
+        run: node --test test/rfw.test.mjs
+      - name: Run real QuickJS HMR regression
+        working-directory: app
+        run: node --test tool/plugin_tools/native.test.mjs
+      - name: Run App pairing, updates and isolation regression
+        working-directory: app
+        run: flutter test test/modules/metaverse/metaverse_development_test.dart test/modules/metaverse/metaverse_development_connection_test.dart test/modules/metaverse/metaverse_development_integration_test.dart

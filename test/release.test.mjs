@@ -30,17 +30,19 @@ test('实际 tgz 在仓库外安装后完成创建、检查、构建和打包',{
  const temp=await mkdtemp(join(tmpdir(),'fluxdo release 空间-'));
  t.after(()=>rm(temp,{recursive:true,force:true,maxRetries:6,retryDelay:250}));
  await writeFile(join(temp,'package.json'),'{"private":true}');
- run(npmCli,['install','--ignore-scripts','--no-audit','--no-fund',join(root,'artifacts/create-fluxdo-plugin-0.1.0.tgz')],temp);
+ run(npmCli,['install','--ignore-scripts','--no-audit','--no-fund',join(root,'artifacts/create-fluxdo-plugin-0.2.0.tgz')],temp);
  const createBin=join(temp,'node_modules/create-fluxdo-plugin/dist/bin.mjs');
  const target=join(temp,'my-plugin');
  run(createBin,[target,'--yes','--id','com.example.generated'],temp);
  const pkgPath=join(target,'package.json');const pkg=JSON.parse(await readFile(pkgPath,'utf8'));
  // 发行前验证同一批真实包，GitHub URL 在发布后的验证中使用。
- pkg.devDependencies['@fluxdo/plugin-cli']='file:'+join(root,'artifacts/fluxdo-plugin-cli-0.1.0.tgz').replaceAll('\\','/');
- pkg.devDependencies['@fluxdo/plugin-sdk']='file:'+join(root,'artifacts/fluxdo-plugin-sdk-0.1.0.tgz').replaceAll('\\','/');
+ pkg.devDependencies['@fluxdo/plugin-cli']='file:'+join(root,'artifacts/fluxdo-plugin-cli-0.2.0.tgz').replaceAll('\\','/');
+ pkg.devDependencies['@fluxdo/plugin-sdk']='file:'+join(root,'artifacts/fluxdo-plugin-sdk-0.2.0.tgz').replaceAll('\\','/');
  await writeFile(pkgPath,JSON.stringify(pkg,null,2));
  run(npmCli,['install','--ignore-scripts','--no-audit','--no-fund'],target);
- for(const command of ['check','build','pack:plugin'])run(npmCli,['run',command],target);
+ for(const command of ['check','build','pack:plugin','test'])run(npmCli,['run',command],target);
+ run(join(target,'node_modules/@fluxdo/plugin-cli/dist/bin.mjs'),['market-entry','--repository','https://github.com/example/plugins','--tag','v1.0.0'],target);
+ const market=JSON.parse(await readFile(join(target,'dist/market-entry.json'),'utf8'));assert.equal(market.id,'com.example.generated');assert.match(market.sha256,/^[a-f0-9]{64}$/);
  const bundleFile=(await readdir(join(target,'dist'))).find(v=>v.endsWith('.fluxplugin'));
  assert.ok(bundleFile);
  const bundle=JSON.parse(await readFile(join(target,'dist',bundleFile),'utf8'));

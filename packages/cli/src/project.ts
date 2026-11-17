@@ -10,6 +10,13 @@ import {valid as validVersion} from 'semver';
 import {neutralImports} from './dev/server.js';
 
 const require=createRequire(import.meta.url);
+require('../vendor/rfw-validator.cjs');
+const components=JSON.parse(await readFile(new URL('./components.json',import.meta.url),'utf8'));
+export function validateUi(source:string):string[] {
+  const result=JSON.parse((globalThis as any).fluxdoValidateRfw(source.replaceAll('\r\n','\n'),JSON.stringify(components)));
+  if(result.diagnostics.length)fail(result.diagnostics.join('\n'));
+  return result.widgets;
+}
 const contract=JSON.parse(await readFile(new URL('./contract.json',import.meta.url),'utf8'));
 const schema=JSON.parse(await readFile(new URL('./plugin.schema.json',import.meta.url),'utf8'));
 const validate=new Ajv({allErrors:true,strict:false}).compile(schema);
@@ -60,12 +67,11 @@ export async function loadProject(directory:string):Promise<Project>{
   const entry=await projectFile(root,config.entry??'src/main.ts');
   const ui=await readFile(await projectFile(root,raw.ui),'utf8');
   if(Buffer.byteLength(ui)>contract.limits.uiBytes)fail('界面文件过大');
-  // 这里只检查声明关联。完整 RFW 语法与组件参数由宿主安装校验。
-  const declarations=ui.replace(/\/\/[^\n]*|\/\*[\s\S]*?\*\//g,'');
-  const imports=[...declarations.matchAll(/\bimport\s+([^;]+);/g)].map(m=>m[1]!.trim());
-  if(imports.some(i=>i!=='fluxdo'))fail('界面只允许 import fluxdo');
-  const widgets=new Set([...declarations.matchAll(/\bwidget\s+(\w+)\b/g)].map(m=>m[1]));
-  for(const widget of [raw.card?.widget,...(raw.pages??[]).map(p=>p.widget)].filter((value):value is string=>typeof value==='string'))if(!widgets.has(widget))fail(`界面缺少组件 ${widget}`);
+  const checked = validateUi(ui);
+  const widgets = new Set(checked);
+  for (const widget of [raw.card?.widget,...(raw.pages??[]).map(p=>p.widget)].filter((value):value is string=>typeof value==='string')) {
+    if (!widgets.has(widget)) fail(`界面缺少组件 ${widget}`);
+  }
   return {root,manifest:raw,entry,ui};
 }
 export async function typecheck(project:Project):Promise<void>{
@@ -124,4 +130,21 @@ export async function packProject(directory:string):Promise<{path:string;sha256:
   const path=await outputFile(project.root,`${project.manifest.id}-${project.manifest.version}.fluxplugin`);
   await atomicWrite(path,bytes);
   return {path,sha256:createHash('sha256').update(bytes).digest('hex'),bytes:bytes.length};
+}
+
+/** 由实际构建产物生成市场草稿，提交仓库前仍由作者核对说明与截图。 */
+export async function createMarketEntry(directory:string,repository:string,tag:string){
+  const repo=new URL(repository);
+  if(repo.protocol!=='https:'||repo.hostname!=='github.com'||!/^\/[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+\/?$/.test(repo.pathname)||repo.search||repo.hash||repo.username||repo.password)fail('仓库须为 GitHub HTTPS 地址');
+  if(!tag||!/^[A-Za-z0-9._-]+$/.test(tag))fail('发布标签无效');
+  const result=await packProject(directory);
+  const project=await loadProject(directory);
+  const m=project.manifest as Manifest & {description?:string;icon?:string};
+  const file=result.path.split(/[\\/]/).at(-1)!;
+  const entry={id:m.id,name:m.name,version:m.version,apiVersion:m.apiVersion,author:m.author,
+    summary:m.description??m.name,description:m.description??m.name,repository:repo.href.replace(/\/$/,''),
+    packageUrl:repo.href.replace(/\/$/,'')+'/releases/download/'+tag+'/'+encodeURIComponent(file),
+    sha256:result.sha256,icon:m.icon??'extension',categories:[],screenshots:[],changelog:'',requiredFeatures:m.requiredFeatures??[]};
+  const path=await outputFile(project.root,'market-entry.json');await atomicWrite(path,JSON.stringify(entry,null,2)+'\n');
+  return path;
 }
