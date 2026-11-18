@@ -29,14 +29,15 @@ jobs:
         with:
           path: tools
           persist-credentials: false
-      - name: Read compatible host revision
+      - name: Read host repository from SDK contract
         id: host
         working-directory: tools
-        run: node -e "const c=require('./packages/sdk/contract.json').hostReference; for(const [k,v] of Object.entries(c)) require('node:fs').appendFileSync(process.env.GITHUB_OUTPUT,k+'='+v+'\n')"
+        run: node -e "const {repository}=require('./packages/sdk/contract.json').hostReference; require('node:fs').appendFileSync(process.env.GITHUB_OUTPUT,'repository='+repository+'\n')"
       - uses: actions/checkout@v4
         with:
           repository: ${{ steps.host.outputs.repository }}
-          ref: ${{ steps.host.outputs.commit }}
+          # contract.hostReference.commit 记录最早兼容宿主。联调使用包含最新回归用例的提交。
+          ref: 5dad7530f02c2a02c4dce1dd8e24c1e89ad2a82a
           path: app
           submodules: recursive
           persist-credentials: false
