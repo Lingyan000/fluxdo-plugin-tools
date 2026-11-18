@@ -1,4 +1,5 @@
 import vm from 'node:vm';
+import {isDeepStrictEqual} from 'node:util';
 import {readFileSync} from 'node:fs';
 const prelude=readFileSync(new URL('./prelude.js',import.meta.url),'utf8');
 /** 插件作者的受控测试宿主。所有外部 API 必须显式模拟；不连接真实账号。 */
@@ -23,6 +24,7 @@ export function createPluginHarness({script,mocks={},initialStorage={}}){
       const fn=mocks[m.m];if(fn)return fn(m.p??{});
       switch(m.m){
         case 'storage.get':return storage[m.p.key]??null;
+        case 'storage.compareAndSet':if(!isDeepStrictEqual(storage[m.p.key]??null,m.p.expected))return false;if(m.p.value===null)delete storage[m.p.key];else storage[m.p.key]=structuredClone(m.p.value);return true;
         case 'storage.set':storage[m.p.key]=structuredClone(m.p.value);return null;
         case 'storage.remove':delete storage[m.p.key];return null;
         case 'storage.setMany':for(const [key,value]of Object.entries(m.p.entries)){if(value===null)delete storage[key];else storage[key]=structuredClone(value);}return null;

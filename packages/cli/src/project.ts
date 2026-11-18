@@ -22,8 +22,8 @@ const schema=JSON.parse(await readFile(new URL('./plugin.schema.json',import.met
 const validate=new Ajv({allErrors:true,strict:false}).compile(schema);
 export interface Manifest {
   schema:number;apiVersion:number;id:string;name:string;version:string;author:string;
-  ui:string;script:string;requiredFeatures?:string[];
-  permissions:{network:string[];forum?:('profiles'|'activity'|'following')[];connect?:string[];credentials?:Record<string,{requests:{origin:string}[]}>};
+  ui:string;script:string;requiredFeatures?:string[];tasks?:{id:string;title:string}[];
+  permissions:{network:string[];background?:boolean;notifications?:boolean;forum?:('profiles'|'activity'|'following')[];connect?:string[];credentials?:Record<string,{requests:{origin:string}[]}>};
   card?:{widget:string};pages?:{id:string;widget:string;presentation?:string;navigation?:{label:string;icon?:string}}[];links?:{page:string}[];
 }
 export interface Project { root:string;manifest:Manifest;entry:string;ui:string }
@@ -50,6 +50,12 @@ export function checkManifest(raw:unknown):asserts raw is Manifest {
   if(m.permissions.forum && m.schema<11)fail('论坛读取权限需要 schema 11');
   if(m.permissions.forum?.length&&!m.requiredFeatures?.includes('forumRead'))fail('论坛读取须声明 forumRead');
   if(m.pages?.some(p=>p.navigation)&&!m.requiredFeatures?.includes('navigationEntries'))fail('导航入口须声明 navigationEntries');
+  if((m.tasks || 'background' in m.permissions || 'notifications' in m.permissions || m.requiredFeatures?.includes('navigationBadge')) && m.schema<12)fail('任务、通知和角标需要 schema 12');
+  if(m.permissions.background&&!m.tasks?.length)fail('后台权限需要至少一个任务');
+  if(m.tasks?.length&&!m.requiredFeatures?.includes('scheduledTasks'))fail('任务须声明 scheduledTasks');
+  if(m.permissions.notifications&&!m.requiredFeatures?.includes('localNotifications'))fail('通知须声明 localNotifications');
+  if(m.requiredFeatures?.includes('navigationBadge')&&!m.pages?.some(p=>p.navigation))fail('角标需要导航页面');
+  if(m.tasks?.some(t=>!t.title.trim())||new Set(m.tasks?.map(t=>t.id)).size!==(m.tasks?.length??0))fail('任务标题为空或 ID 重复');
   const ids=new Set<string>();
   for(const page of m.pages??[]){if(ids.has(page.id))fail('页面 ID 重复');ids.add(page.id);if(page.navigation&&(m.schema<11||page.presentation==='modal'))fail('导航入口需要 schema 11 的普通页面');}
   for(const link of m.links??[])if(!ids.has(link.page))fail('链接指向未声明的页面');

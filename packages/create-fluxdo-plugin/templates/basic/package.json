@@ -15,7 +15,7 @@
     "node": ">=24.11.0"
   },
   "devDependencies": {
-    "@fluxdo/plugin-cli": "https://github.com/Lingyan000/fluxdo-plugin-tools/releases/download/v0.3.0/fluxdo-plugin-cli-0.3.0.tgz",
-    "@fluxdo/plugin-sdk": "https://github.com/Lingyan000/fluxdo-plugin-tools/releases/download/v0.3.0/fluxdo-plugin-sdk-0.3.0.tgz"
+    "@fluxdo/plugin-cli": "https://github.com/Lingyan000/fluxdo-plugin-tools/releases/download/v0.4.0/fluxdo-plugin-cli-0.4.0.tgz",
+    "@fluxdo/plugin-sdk": "https://github.com/Lingyan000/fluxdo-plugin-tools/releases/download/v0.4.0/fluxdo-plugin-sdk-0.4.0.tgz"
   }
 }
