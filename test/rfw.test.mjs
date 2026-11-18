@@ -20,9 +20,57 @@ test('模拟宿主只使用显式 API 替身，取消不会执行后续网络副
  approved=true;await host.dispatch('submit');assert.equal(host.data.s1.result.id,123);
 });
 
-test('RFW 参数契约覆盖士多插件实际界面',async()=>{
+test('RFW 参数契约覆盖士多和动态订阅的实际界面',async()=>{
  const root=process.env.FLUXDO_APP;
  if(!root)return;
  const ui=await readFile(root+'/test/fixtures/metaverse/ld-store/ui.rfwtxt','utf8');
  assert.ok(validateUi(ui).length>0);
+ const activity=JSON.parse(await readFile(root+'/test/fixtures/metaverse/activity-feed-1.1.0.fluxplugin','utf8'));
+ assert.ok(validateUi(activity.files[activity.manifest.ui]).includes('Following'));
+});
+
+test('旧发行包建立的订阅、未读和缓存可由新发行包直接使用', async t => {
+  const app = process.env.FLUXDO_APP;
+  if (!app) { t.skip('原生宿主联调提供发行包'); return; }
+  const surface = {surface: 'feed', kind: 'page', page: 'feed', params: {}};
+  let day = 1, allowed = true, reads = 0;
+  const mocks = {
+    'permissions.status': () => ({forumProfiles: true, forumActivity: allowed}),
+    'tasks.list': () => [], 'notifications.isAllowed': () => false, 'navigation.setBadge': () => null,
+    'forum.read': ({resource, username}) => {
+      reads++;
+      if (resource === 'user') return {id: 1, username};
+      const items = resource === 'actions' ? Array.from({length: day}, (_, index) => ({
+        id: 'action-' + index, action: 'topics', topicId: 1, createdAt: '2026-10-0' + (1 + index) + 'T12:00:00Z',
+        title: '测试话题', excerpt: '这是一段摘要',
+      })) : [];
+      return {items};
+    },
+  };
+  async function start(version, initialStorage) {
+    const bundle = JSON.parse(await readFile(app + '/test/fixtures/metaverse/activity-feed-' + version + '.fluxplugin','utf8'));
+    const host = createPluginHarness({script: bundle.files[bundle.manifest.script], mocks, initialStorage});
+    t.after(() => host.close());
+    return host;
+  }
+  const old = await start('1.0.0');
+  await old.dispatch('add', {value: 'mori'}, surface);
+  day = 2;
+  await old.dispatch('task.run', {id: 'refresh'}, {surface:'task', kind:'task', params:{}});
+  await old.dispatch('page.resume', {}, surface);
+  assert.equal(old.data.feed.title, '1 位订阅 · 1 条未读');
+  allowed = false;
+  const next = await start('1.1.0', old.storage);
+  const before = reads;
+  await next.dispatch('page.open', {}, surface);
+  assert.equal(reads, before);
+  assert.equal(next.data.feed.needsActivity, true);
+  assert.equal(next.data.feed.title, old.data.feed.title);
+  assert.equal(next.data.feed.items[0].name, 'mori');
+  await next.dispatch('unread', {}, surface);
+  assert.equal(next.data.feed.items.length, 1);
+  allowed = true;
+  await next.dispatch('refresh', {}, surface);
+  assert.equal(next.data.feed.items[0].summary, '这是一段摘要');
+  assert.equal(next.data.feed.title, old.data.feed.title);
 });

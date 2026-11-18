@@ -334,7 +334,7 @@
           "confirmationDialog",
           "nativeExecutionLimits",
           "navigationEntries",
-          "forumRead", "scheduledTasks", "localNotifications", "navigationBadge", "atomicStorage"
+          "forumRead", "scheduledTasks", "localNotifications", "navigationBadge", "atomicStorage", "runtimePermissions", "adaptiveCollections", "modalDismiss"
         ]
       },
       "uniqueItems": true
