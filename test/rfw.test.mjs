@@ -25,7 +25,7 @@ test('RFW 参数契约覆盖士多和动态订阅的实际界面',async()=>{
  if(!root)return;
  const ui=await readFile(root+'/test/fixtures/metaverse/ld-store/ui.rfwtxt','utf8');
  assert.ok(validateUi(ui).length>0);
- const activity=JSON.parse(await readFile(root+'/test/fixtures/metaverse/activity-feed-1.1.0.fluxplugin','utf8'));
+ const activity=JSON.parse(await readFile(root+'/test/fixtures/metaverse/activity-feed-1.2.0.fluxplugin','utf8'));
  assert.ok(validateUi(activity.files[activity.manifest.ui]).includes('Following'));
 });
 
@@ -60,7 +60,7 @@ test('旧发行包建立的订阅、未读和缓存可由新发行包直接使�
   await old.dispatch('page.resume', {}, surface);
   assert.equal(old.data.feed.title, '1 位订阅 · 1 条未读');
   allowed = false;
-  const next = await start('1.1.0', old.storage);
+  const next = await start('1.2.0', old.storage);
   const before = reads;
   await next.dispatch('page.open', {}, surface);
   assert.equal(reads, before);
@@ -74,3 +74,8 @@ test('旧发行包建立的订阅、未读和缓存可由新发行包直接使�
   assert.equal(next.data.feed.items[0].summary, '这是一段摘要');
   assert.equal(next.data.feed.title, old.data.feed.title);
 });
+
+ test('展示组件参数和固定工具区可静态校验',()=>{
+ assert.ok(validateUi('import fluxdo; widget Card = Statistics(items:[{value:"2",label:"订阅"}]); widget Home = PageLayout(toolbar:SearchInput(),children:[Amount(value:"12.00",unit:"LDC"),QuantityInput(min:1,max:3,value:2),Markdown(text:"**正文**"),Image(url:"https://example.org/a.png",preview:true),CopyButton(text:"内容")]);').includes('Home'));
+ assert.throws(()=>validateUi('import fluxdo; widget Card = Statistics(unknown:true);'),/不支持参数/);
+ });

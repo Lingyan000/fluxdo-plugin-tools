@@ -17,9 +17,27 @@
       ]
     },
     "tasks": {
-      "type": "array", "maxItems": 4,
-      "items": {"type": "object", "required": ["id", "title"], "additionalProperties": false,
-        "properties": {"id": {"type": "string", "pattern": "^[A-Za-z][A-Za-z0-9_-]{0,63}$"}, "title": {"type": "string", "minLength": 1, "maxLength": 80}}}
+      "type": "array",
+      "maxItems": 4,
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "title"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[A-Za-z][A-Za-z0-9_-]{0,63}$"
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          }
+        }
+      }
     },
     "apiVersion": {
       "const": 2
@@ -92,8 +110,12 @@
           },
           "uniqueItems": true
         },
-        "background": {"type": "boolean"},
-        "notifications": {"type": "boolean"},
+        "background": {
+          "type": "boolean"
+        },
+        "notifications": {
+          "type": "boolean"
+        },
         "identity": {
           "type": "boolean"
         },
@@ -223,6 +245,11 @@
           "minLength": 1,
           "maxLength": 64,
           "pattern": "^[a-zA-Z_][a-zA-Z0-9_]*$"
+        },
+        "page": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
         }
       },
       "required": [
@@ -334,7 +361,16 @@
           "confirmationDialog",
           "nativeExecutionLimits",
           "navigationEntries",
-          "forumRead", "scheduledTasks", "localNotifications", "navigationBadge", "atomicStorage", "runtimePermissions", "adaptiveCollections", "modalDismiss"
+          "forumRead",
+          "scheduledTasks",
+          "localNotifications",
+          "navigationBadge",
+          "atomicStorage",
+          "runtimePermissions",
+          "adaptiveCollections",
+          "modalDismiss",
+          "cardNavigation",
+          "contentPresentation"
         ]
       },
       "uniqueItems": true
