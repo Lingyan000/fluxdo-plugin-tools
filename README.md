@@ -4,10 +4,10 @@ FluxDO 原生插件的 CLI、项目脚手架和 TypeScript SDK。插件作者只
 
 ## 创建插件
 
-0.6.0 通过 GitHub Release 分发三个独立 npm 格式包，尚未发布到 npm registry。
+0.7.0 通过 GitHub Release 分发三个独立 npm 格式包，尚未发布到 npm registry。
 
 ~~~sh
-npx --yes --package=https://github.com/Lingyan000/fluxdo-plugin-tools/releases/download/v0.6.0/create-fluxdo-plugin-0.6.0.tgz create-fluxdo-plugin my-plugin --id com.example.myplugin
+npx --yes --package=https://github.com/Lingyan000/fluxdo-plugin-tools/releases/download/v0.7.0/create-fluxdo-plugin-0.7.0.tgz create-fluxdo-plugin my-plugin --id com.example.myplugin
 cd my-plugin
 npm install
 npm run check
@@ -72,10 +72,12 @@ pnpm test 会把三个包制成实际 tgz，在仓库外安装脚手架和依赖
 
 ## 论坛与底栏页面
 
-0.6.0 新增按需授权、自适应集合组件和表单完成后关闭当前弹层的能力。可先调用 `ctx.api.permissions.status()`，在用户选择功能时用 `request()` 申请缺少的范围。详见[权限与返回值](https://github.com/Lingyan000/fluxdo/blob/codex/ld-store-native-checkout/docs/plugins/api.md#用户关闭权限时)。
+0.7.0 新增按需授权、自适应集合组件和表单完成后关闭当前弹层的能力。可先调用 `ctx.api.permissions.status()`，在用户选择功能时用 `request()` 申请缺少的范围。详见[权限与返回值](https://github.com/Lingyan000/fluxdo/blob/codex/ld-store-native-checkout/docs/plugins/api.md#用户关闭权限时)。
 
 0.4.0 支持 schema 12：独立任务、用户批准的系统后台刷新、本地通知、底栏角标和跨实例条件写入。开发会话不安排系统任务。用 `createPluginHarness` 模拟 `task.run`，打包安装后验证系统唤醒与通知点击。参见[完整接口](https://github.com/Lingyan000/fluxdo/blob/codex/ld-store-native-checkout/docs/plugins/api.md#定时任务通知与角标)。
 
 0.3.0 新增 schema 11 清单校验、`forum.read`/`forum.open` 类型和 [用户动态示例](examples/forum-activity/)。元宇宙首页与插件声明的页面都可由用户添加到底栏；开发会话只预览，不改正式导航。宿主需要支持 `navigationEntries` 与 `forumRead`。
 
 示例使用当前账号读取发帖和回复，点击后打开原生话题。论坛请求由可见页面或有效任务的 `ctx.api` 发起，只能使用清单批准的 `profiles`、`activity`、`following` 权限。业务名单、聚合与刷新策略由插件编写。具体协议和限流规则见 [宿主 API 文档](https://github.com/Lingyan000/fluxdo/blob/codex/ld-store-native-checkout/docs/plugins/api.md#论坛只读接口与原生导航)。
+
+实时服务可使用 `ctx.api.streams.open/close`。声明 `eventStreams`，通过 `stream.event` 与 `stream.state` 接收数据和连接状态，隐藏界面会暂停，恢复时重连。协议和完整限制见[宿主 SSE 文档](https://github.com/Lingyan000/fluxdo/blob/codex/ld-store-native-checkout/docs/plugins/api.md#sse-实时事件)。

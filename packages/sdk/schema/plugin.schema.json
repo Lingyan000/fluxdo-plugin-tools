@@ -370,7 +370,8 @@
           "adaptiveCollections",
           "modalDismiss",
           "cardNavigation",
-          "contentPresentation"
+          "contentPresentation",
+          "eventStreams"
         ]
       },
       "uniqueItems": true

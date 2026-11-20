@@ -12,3 +12,5 @@ contract.json 记录兼容版本、能力名称、容量和类型摘要（统一
 @fluxdo/plugin-sdk/components 导出从生产组件生成的顶层参数清单。CLI 进行静态参数名检查；动态值和嵌套字段仍由运行时校验。fluxdo.on 返回撤销函数，开发运行器也会在模块替换后自动撤销旧注册。
 
 0.6.0 新增 `cardNavigation`、`contentPresentation`。清单 `card.page` 指向普通页面时整卡可进入，卡片内按钮与菜单保持独立。展示组件含 Statistics、Amount、QuantityInput、Markdown、CopyButton，页面组件支持 toolbar，Image 支持 preview。
+
+0.7.0 增加 `eventStreams`、`ctx.api.streams.open/close`，以 `stream.event` 和 `stream.state` 接收事件和状态。流随界面隐藏暂停，连接复用现有网络与凭证权限；业务自行处理快照补查，系统通知单独申请授权。
