@@ -19,6 +19,7 @@ function run(file,args,cwd){
  assert.equal(result.status,0,result.stdout+'\n'+result.stderr);return result.stdout;
 }
 test('实际 tgz 在仓库外安装后完成创建、检查、构建和打包',{timeout:180000},async t=>{
+ const version=JSON.parse(await readFile(join(root,'package.json'),'utf8')).version;
  run(join(root,'tools/pack-release.mjs'),[],root);
  const sums=(await readFile(join(root,'artifacts/SHA256SUMS.txt'),'utf8')).trim().split('\n');
  assert.equal(sums.length,3);
@@ -30,14 +31,14 @@ test('实际 tgz 在仓库外安装后完成创建、检查、构建和打包',{
  const temp=await mkdtemp(join(tmpdir(),'fluxdo release 空间-'));
  t.after(()=>rm(temp,{recursive:true,force:true,maxRetries:6,retryDelay:250}));
  await writeFile(join(temp,'package.json'),'{"private":true}');
- run(npmCli,['install','--ignore-scripts','--no-audit','--no-fund',join(root,'artifacts/create-fluxdo-plugin-0.8.0.tgz')],temp);
+ run(npmCli,['install','--ignore-scripts','--no-audit','--no-fund',join(root,'artifacts/create-fluxdo-plugin-'+version+'.tgz')],temp);
  const createBin=join(temp,'node_modules/create-fluxdo-plugin/dist/bin.mjs');
  const target=join(temp,'my-plugin');
  run(createBin,[target,'--yes','--id','com.example.generated'],temp);
  const pkgPath=join(target,'package.json');const pkg=JSON.parse(await readFile(pkgPath,'utf8'));
  // 发行前验证同一批真实包，GitHub URL 在发布后的验证中使用。
- pkg.devDependencies['@fluxdo/plugin-cli']='file:'+join(root,'artifacts/fluxdo-plugin-cli-0.8.0.tgz').replaceAll('\\','/');
- pkg.devDependencies['@fluxdo/plugin-sdk']='file:'+join(root,'artifacts/fluxdo-plugin-sdk-0.8.0.tgz').replaceAll('\\','/');
+ pkg.devDependencies['@fluxdo/plugin-cli']='file:'+join(root,'artifacts/fluxdo-plugin-cli-'+version+'.tgz').replaceAll('\\','/');
+ pkg.devDependencies['@fluxdo/plugin-sdk']='file:'+join(root,'artifacts/fluxdo-plugin-sdk-'+version+'.tgz').replaceAll('\\','/');
  await writeFile(pkgPath,JSON.stringify(pkg,null,2));
  run(npmCli,['install','--ignore-scripts','--no-audit','--no-fund'],target);
  for(const command of ['check','build','pack:plugin','test'])run(npmCli,['run',command],target);

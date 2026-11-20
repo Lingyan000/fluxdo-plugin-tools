@@ -13,7 +13,7 @@ test('脚手架生成独立项目，保留输入文本且拒绝覆盖',async t=>
  const manifest=JSON.parse(await readFile(join(target,'plugin.json'),'utf8'));
  assert.equal(manifest.name,'测试 "原生" 插件');checkManifest(manifest);
  const pkg=JSON.parse(await readFile(join(target,'package.json'),'utf8'));
- assert.equal(pkg.name,'my-plugin');assert.ok(pkg.devDependencies['@fluxdo/plugin-sdk'].includes('/v0.8.0/'));
+ assert.equal(pkg.name,'my-plugin');const version=JSON.parse(await readFile(join(root,'packages/sdk/package.json'),'utf8')).version;assert.ok(pkg.devDependencies['@fluxdo/plugin-sdk'].includes('/v'+version+'/'));
  assert.ok(!(await readFile(join(target,'tsconfig.json'),'utf8')).includes('../../../'));
  await access(join(target,'.gitignore'));
  await assert.rejects(()=>createPlugin({directory:target}),/已存在/);

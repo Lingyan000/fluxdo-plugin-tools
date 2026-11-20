@@ -16,3 +16,5 @@ contract.json 记录兼容版本、能力名称、容量和类型摘要（统一
 0.7.0 增加 `eventStreams`、`ctx.api.streams.open/close`，以 `stream.event` 和 `stream.state` 接收事件和状态。流随界面隐藏暂停，连接复用现有网络与凭证权限；业务自行处理快照补查，系统通知单独申请授权。
 
 0.8.0 增加 `host.environment()`、`preferences.get()`、`storage.migrate` 事件，以及 `host.environmentChanged` 和 `preferences.changed` 事件。清单声明 `dataVersion`、`preferences` 和相应必需能力；迁移在隔离存储副本中执行，不能联网或访问凭证。`createScenario` 为权限、账号、离线、凭证失效、宿主环境和偏好提供显式测试替身，虚拟计时器支持推进重试时间。
+
+0.9.0 增加 `pageChrome`：清单页面的 `appBar.title` 与 `appBar.actions` 引用共享页面状态的 RFW 组件。按钮支持全宽，图标按钮支持加载、禁用、选中，统计支持骨架加载。

@@ -25,7 +25,7 @@ export interface Manifest {
   schema:number;apiVersion:number;id:string;name:string;version:string;author:string;
   ui:string;script:string;requiredFeatures?:string[];tasks?:{id:string;title:string}[];dataVersion?:number;preferences?:{key:string;type:string;default?:unknown;options?:Record<string,string>}[];
   permissions:{network:string[];background?:boolean;notifications?:boolean;forum?:('profiles'|'activity'|'following')[];connect?:string[];credentials?:Record<string,{requests:{origin:string}[]}>};
-  card?:{widget:string;page?:string};pages?:{id:string;widget:string;presentation?:string;navigation?:{label:string;icon?:string}}[];links?:{page:string}[];
+  card?:{widget:string;page?:string};pages?:{id:string;widget:string;appBar?:{title?:string;actions?:string};presentation?:string;navigation?:{label:string;icon?:string}}[];links?:{page:string}[];
 }
 export interface Project { root:string;manifest:Manifest;entry:string;ui:string }
 function fail(message:string):never {throw new Error(message);}
@@ -66,6 +66,7 @@ export function checkManifest(raw:unknown):asserts raw is Manifest {
   if(m.tasks?.some(t=>!t.title.trim())||new Set(m.tasks?.map(t=>t.id)).size!==(m.tasks?.length??0))fail('任务标题为空或 ID 重复');
   const ids=new Set<string>();
   for(const page of m.pages??[]){if(ids.has(page.id))fail('页面 ID 重复');ids.add(page.id);if(page.navigation&&(m.schema<11||page.presentation==='modal'))fail('导航入口需要 schema 11 的普通页面');}
+  if(m.pages?.some(p=>p.appBar)&&!m.requiredFeatures?.includes('pageChrome'))fail('标题栏插槽须声明 pageChrome');
   if(m.card?.page && (!m.requiredFeatures?.includes('cardNavigation') || !m.pages?.some(p=>p.id===m.card!.page && p.presentation!=='modal')))fail('卡片入口需要 cardNavigation 并引用普通页面');
   for(const link of m.links??[])if(!ids.has(link.page))fail('链接指向未声明的页面');
   const endpoints=[...(m.permissions.connect??[]),...Object.values(m.permissions.credentials??{}).flatMap(v=>v.requests.map(r=>r.origin))];
@@ -87,7 +88,7 @@ export async function loadProject(directory:string):Promise<Project>{
   if(Buffer.byteLength(ui)>contract.limits.uiBytes)fail('界面文件过大');
   const checked = validateUi(ui);
   const widgets = new Set(checked);
-  for (const widget of [raw.card?.widget,...(raw.pages??[]).map(p=>p.widget)].filter((value):value is string=>typeof value==='string')) {
+  for (const widget of [raw.card?.widget,...(raw.pages??[]).flatMap(p=>[p.widget,p.appBar?.title,p.appBar?.actions])].filter((value):value is string=>typeof value==='string')) {
     if (!widgets.has(widget)) fail(`界面缺少组件 ${widget}`);
   }
   return {root,manifest:raw,entry,ui};

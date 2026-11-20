@@ -307,6 +307,25 @@
               "label"
             ],
             "additionalProperties": false
+          },
+          "appBar": {
+            "type": "object",
+            "minProperties": 1,
+            "properties": {
+              "title": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 64,
+                "pattern": "^[a-zA-Z_][a-zA-Z0-9_]*$"
+              },
+              "actions": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 64,
+                "pattern": "^[a-zA-Z_][a-zA-Z0-9_]*$"
+              }
+            },
+            "additionalProperties": false
           }
         },
         "required": [
@@ -374,7 +393,8 @@
           "eventStreams",
           "dataMigrations",
           "hostEnvironment",
-          "pluginPreferences"
+          "pluginPreferences",
+          "pageChrome"
         ]
       },
       "uniqueItems": true
