@@ -1,0 +1,2 @@
+import fluxdo;
+widget Card = Column(children:[Label(text:data.title),Label(text:data.items)]);

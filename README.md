@@ -4,10 +4,10 @@ FluxDO 原生插件的 CLI、项目脚手架和 TypeScript SDK。插件作者只
 
 ## 创建插件
 
-0.7.0 通过 GitHub Release 分发三个独立 npm 格式包，尚未发布到 npm registry。
+0.8.0 通过 GitHub Release 分发三个独立 npm 格式包，尚未发布到 npm registry。
 
 ~~~sh
-npx --yes --package=https://github.com/Lingyan000/fluxdo-plugin-tools/releases/download/v0.7.0/create-fluxdo-plugin-0.7.0.tgz create-fluxdo-plugin my-plugin --id com.example.myplugin
+npx --yes --package=https://github.com/Lingyan000/fluxdo-plugin-tools/releases/download/v0.8.0/create-fluxdo-plugin-0.8.0.tgz create-fluxdo-plugin my-plugin --id com.example.myplugin
 cd my-plugin
 npm install
 npm run check
@@ -44,7 +44,7 @@ Flutter、QuickJS 原生实现、RFW 渲染、权限和支付留在 [FluxDO 应�
 - fluxdo dev：启动回环设备服务；在 App 开发中心粘贴配对地址。
 - fluxdo dev --stdio：提供版本 1 的模块开发消息通道，供宿主适配器和集成测试连接。
 
-Vite 负责开发模块依赖和 HMR；tsdown 构建工具自身；正式插件不携带 Vite。CLI 使用从应用编译的官方 RFW 解析器，并校验由生产组件导出的顶层参数名。动态值、嵌套对象的类型和真实布局仍在 App 预览中验证。
+Vite 负责开发模块依赖和 HMR；tsdown 构建工具自身；正式插件不携带 Vite。CLI 使用从应用编译的官方 RFW 解析器，并校验从生产组件读取位置导出的参数名、静态类型和嵌套字段，错误定位到组件、路径与行列。动态值和真实布局仍在 App 预览中验证。
 
 ## App 原生预览
 
@@ -72,7 +72,7 @@ pnpm test 会把三个包制成实际 tgz，在仓库外安装脚手架和依赖
 
 ## 论坛与底栏页面
 
-0.7.0 新增按需授权、自适应集合组件和表单完成后关闭当前弹层的能力。可先调用 `ctx.api.permissions.status()`，在用户选择功能时用 `request()` 申请缺少的范围。详见[权限与返回值](https://github.com/Lingyan000/fluxdo/blob/codex/ld-store-native-checkout/docs/plugins/api.md#用户关闭权限时)。
+按需授权支持、自适应集合组件和表单完成后关闭当前弹层的能力。可先调用 `ctx.api.permissions.status()`，在用户选择功能时用 `request()` 申请缺少的范围。详见[权限与返回值](https://github.com/Lingyan000/fluxdo/blob/codex/ld-store-native-checkout/docs/plugins/api.md#用户关闭权限时)。
 
 0.4.0 支持 schema 12：独立任务、用户批准的系统后台刷新、本地通知、底栏角标和跨实例条件写入。开发会话不安排系统任务。用 `createPluginHarness` 模拟 `task.run`，打包安装后验证系统唤醒与通知点击。参见[完整接口](https://github.com/Lingyan000/fluxdo/blob/codex/ld-store-native-checkout/docs/plugins/api.md#定时任务通知与角标)。
 
@@ -81,3 +81,13 @@ pnpm test 会把三个包制成实际 tgz，在仓库外安装脚手架和依赖
 示例使用当前账号读取发帖和回复，点击后打开原生话题。论坛请求由可见页面或有效任务的 `ctx.api` 发起，只能使用清单批准的 `profiles`、`activity`、`following` 权限。业务名单、聚合与刷新策略由插件编写。具体协议和限流规则见 [宿主 API 文档](https://github.com/Lingyan000/fluxdo/blob/codex/ld-store-native-checkout/docs/plugins/api.md#论坛只读接口与原生导航)。
 
 实时服务可使用 `ctx.api.streams.open/close`。声明 `eventStreams`，通过 `stream.event` 与 `stream.state` 接收数据和连接状态，隐藏界面会暂停，恢复时重连。协议和完整限制见[宿主 SSE 文档](https://github.com/Lingyan000/fluxdo/blob/codex/ld-store-native-checkout/docs/plugins/api.md#sse-实时事件)。
+
+## 数据迁移、偏好与发行
+
+SDK 0.8.0 提供 host.environment、preferences.get 与 storage.migrate 类型，以及 [数据迁移与偏好示例](examples/data-migration/)。清单声明 dataVersion 和 pluginPreferences，迁移按账号在副本上执行，成功后才切换，不能联网或操作凭证。
+
+测试工具导出 createScenario，可以控制离线、账号、权限和凭证过期；createPluginHarness({virtualTimers:true}) 的 advance 推进虚拟时间。模拟场景只验证业务，不代替真实宿主隔离与系统调度。
+
+pack 与 market-entry 接受 --key private.pem，轮换时另提供 --previous-key old.pem；不传密钥仍生成无签名包。签名绑定规范化清单与资源摘要，宿主用原安装公钥判断连续性，首次信任仍由用户决定。market-entry --channel stable|preview 选择发布渠道，稳定版不能使用预发布版本号。
+
+脚手架的 .github/workflows/plugin-release.yml 经手动触发后校验并创建草稿 Release，带包、摘要和市场条目产物。签名可用仓库 Secrets PLUGIN_SIGNING_KEY 配置，轮换用 PLUGIN_PREVIOUS_SIGNING_KEY；私钥不输出、不进入产物，并从临时目录清理。作者核对草稿后发布。已发布坏版本应在目录标记 withdrawn 或加入 withdrawnVersions，保留原因并发布修复版本，不修改原附件。

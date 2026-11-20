@@ -18,28 +18,32 @@ const help=`FluxDO 插件工具
   fluxdo test [目录]          构建并运行插件模拟宿主测试
   fluxdo market-entry [目录] --repository URL --tag TAG
                              构建并生成 GitHub 市场条目草稿
+  --key 文件 --previous-key 文件  为包签名，第二项仅在轮换密钥时提供
+  --channel stable|preview       市场发布渠道
   fluxdo doctor              检查 Node 工具链
   fluxdo dev [目录]           连接 App 原生预览（默认端口 5174）
   fluxdo dev [目录] --stdio   通过标准输入输出提供开发模块协议
 
 在 App 开发中心打开「连接开发工具」并粘贴配对地址。Android 先运行 adb reverse tcp:5174 tcp:5174。`;
 try{
-  const {values,positionals}=parseArgs({allowPositionals:true,options:{help:{type:'boolean',short:'h'},version:{type:'boolean',short:'v'},stdio:{type:'boolean'},port:{type:'string'},repository:{type:'string'},tag:{type:'string'}}});
+  const {values,positionals}=parseArgs({allowPositionals:true,options:{help:{type:'boolean',short:'h'},version:{type:'boolean',short:'v'},stdio:{type:'boolean'},port:{type:'string'},repository:{type:'string'},tag:{type:'string'},key:{type:'string'},'previous-key':{type:'string'},channel:{type:'string'}}});
   if(values.version)console.log(metadata.version);
   else if(values.help||!positionals.length)console.log(help);
   else {
     const [command,dir='.']=positionals;
     const root=resolve(dir);
+    const signing={key:values.key,previousKey:values['previous-key']};
+    if(values.channel&&!['stable','preview'].includes(values.channel))throw new Error('渠道须为 stable 或 preview');
     switch(command){
       case 'doctor':
         if(!satisfies(process.versions.node,metadata.engines.node))throw new Error('需要 Node 24.11 或以上版本');
         console.log(`Node ${process.version}；Vite 模块服务可用；SDK API ${contract.apiVersion} / schema ${contract.manifestSchemas.join(', ')}`);break;
       case 'check':await typecheck(await loadProject(root));console.log('类型、清单和界面引用检查通过');break;
       case 'build':await buildProject(root);console.log('已构建 '+resolve(root,'dist'));break;
-      case 'pack':console.log(JSON.stringify(await packProject(root),null,2));break;
+      case 'pack':console.log(JSON.stringify(await packProject(root,signing),null,2));break;
       case 'market-entry':
         if(!values.repository||!values.tag)throw new Error('需要 --repository 与 --tag');
-        console.log(await createMarketEntry(root,values.repository,values.tag));break;
+        console.log(await createMarketEntry(root,values.repository,values.tag,{...signing,channel:values.channel}));break;
       case 'test':{
         await buildProject(root);
         await new Promise<void>((done,reject)=>{

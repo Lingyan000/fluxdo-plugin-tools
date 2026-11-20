@@ -1,0 +1,30 @@
+{
+  "schema": 12,
+  "apiVersion": 2,
+  "id": "example.data.migration",
+  "name": "偏好与迁移示例",
+  "author": "example",
+  "version": "2.0.0",
+  "ui": "ui.rfwtxt",
+  "script": "main.js",
+  "dataVersion": 2,
+  "requiredFeatures": [
+    "dataMigrations",
+    "hostEnvironment",
+    "pluginPreferences"
+  ],
+  "permissions": {
+    "network": []
+  },
+  "card": {
+    "widget": "Card"
+  },
+  "preferences": [
+    {
+      "key": "compact",
+      "title": "紧凑显示",
+      "type": "toggle",
+      "default": false
+    }
+  ]
+}

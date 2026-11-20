@@ -79,3 +79,11 @@ test('旧发行包建立的订阅、未读和缓存可由新发行包直接使�
  assert.ok(validateUi('import fluxdo; widget Card = Statistics(items:[{value:"2",label:"订阅"}]); widget Home = PageLayout(toolbar:SearchInput(),children:[Amount(value:"12.00",unit:"LDC"),QuantityInput(min:1,max:3,value:2),Markdown(text:"**正文**"),Image(url:"https://example.org/a.png",preview:true),CopyButton(text:"内容")]);').includes('Home'));
  assert.throws(()=>validateUi('import fluxdo; widget Card = Statistics(unknown:true);'),/不支持参数/);
  });
+
+test('参数类型及嵌套表单错误在构建前定位，动态数据保持支持',()=>{
+ assert.throws(()=>validateUi('import fluxdo; widget Card = Button(loading:"yes");'),/Button.loading 应为 boolean/);
+ assert.throws(()=>validateUi('import fluxdo; widget Card = FormPage(fields:[{name:"a",required:"yes",maxLength:"10"}]);'),/fields\[0\].required/);
+ assert.throws(()=>validateUi('import fluxdo; widget Card = FormPage(fields:[{name:"a",options:[{value:false}]}]);'),/options\[0\].value/);
+ assert.deepEqual(validateUi('import fluxdo; widget Card = Label(text:["数量",data.count]);'),['Card']);
+ assert.deepEqual(validateUi('import fluxdo; widget Card = Button(loading:data.busy);'),['Card']);
+});

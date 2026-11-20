@@ -1,11 +1,12 @@
+export {createScenario} from './scenarios.mjs';
 import vm from 'node:vm';
 import {isDeepStrictEqual} from 'node:util';
 import {readFileSync} from 'node:fs';
 const prelude=readFileSync(new URL('./prelude.js',import.meta.url),'utf8');
 /** 插件作者的受控测试宿主。所有外部 API 必须显式模拟；不连接真实账号。 */
-export function createPluginHarness({script,mocks={},initialStorage={}}){
+export function createPluginHarness({script,mocks={},initialStorage={},virtualTimers=false}){
   const calls=[],logs=[],data={},storage=structuredClone(initialStorage),timers=new Map();
-  const handlers=new Map();let closed=false,idleWaiters=[],pending=0;
+  let closed=false,idleWaiters=[],pending=0,clock=0;
   const idle=()=>{if(pending===0){for(const done of idleWaiters)done();idleWaiters=[];}};
   const context=vm.createContext({sendMessage(_channel,raw){
     if(closed)return;
@@ -14,7 +15,8 @@ export function createPluginHarness({script,mocks={},initialStorage={}}){
     if(m.t==='log'||m.t==='error'){logs.push(m);return;}
     if(m.t==='data'){(data[m.s]??={})[m.k]=structuredClone(m.v);return;}
     if(m.t==='timer'){
-      if(m.op==='clear'){clearTimeout(timers.get(m.id));timers.delete(m.id);}
+      if(m.op==='clear'){if(!virtualTimers)clearTimeout(timers.get(m.id));timers.delete(m.id);}
+      else if(virtualTimers)timers.set(m.id,{at:clock+Math.max(0,m.ms)});
       else timers.set(m.id,setTimeout(()=>{timers.delete(m.id);evaluate(`__fluxdoMetaverse.timer(${m.id})`);},Math.max(0,Math.min(m.ms,10000))));
       return;
     }
@@ -36,15 +38,24 @@ export function createPluginHarness({script,mocks={},initialStorage={}}){
   }});
   function evaluate(code){if(closed)throw new Error('测试实例已关闭');return vm.runInContext(code,context,{timeout:1000});}
   evaluate(prelude);evaluate(script);
+  async function untilIdle(){
+    if(pending===0)return;
+    await new Promise((resolve,reject)=>{
+      const done=()=>{clearTimeout(timer);resolve();};
+      const timer=setTimeout(()=>{idleWaiters=idleWaiters.filter(w=>w!==done);reject(new Error('插件事件超时'));},3000);
+      idleWaiters.push(done);idle();
+    });
+  }
   return {calls,logs,data,storage,
     async dispatch(event,args={},surface={surface:'s1',kind:'card',params:{}}){
       evaluate(`__fluxdoMetaverse.dispatch(${JSON.stringify(event)},${JSON.stringify(JSON.stringify(surface))},${JSON.stringify(JSON.stringify(args))})`);
-      if(pending===0)return;
-      await new Promise((resolve,reject)=>{
-        const timer=setTimeout(()=>reject(new Error('插件事件超时')),3000);
-        idleWaiters.push(()=>{clearTimeout(timer);resolve();});idle();
-      });
+      await untilIdle();
     },
-    close(){closed=true;for(const timer of timers.values())clearTimeout(timer);timers.clear();},
+    async advance(milliseconds){
+      if(!virtualTimers||!Number.isFinite(milliseconds)||milliseconds<0)throw new Error('需要非负虚拟时间');
+      clock+=milliseconds;const due=[...timers].filter(([,v])=>v.at<=clock);for(const [id]of due){timers.delete(id);evaluate('__fluxdoMetaverse.timer('+id+')');}
+      await Promise.resolve();await untilIdle();
+    },
+    close(){closed=true;if(!virtualTimers)for(const timer of timers.values())clearTimeout(timer);timers.clear();},
   };
 }

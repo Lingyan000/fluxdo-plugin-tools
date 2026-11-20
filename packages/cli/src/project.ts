@@ -6,7 +6,8 @@ import {createHash, randomUUID} from 'node:crypto';
 import {Script} from 'node:vm';
 import {build as viteBuild} from 'vite';
 import {Ajv} from 'ajv';
-import {valid as validVersion} from 'semver';
+import {valid as validVersion, prerelease} from 'semver';
+import {signBundle,type SigningOptions} from './signing.js';
 import {neutralImports} from './dev/server.js';
 
 const require=createRequire(import.meta.url);
@@ -22,7 +23,7 @@ const schema=JSON.parse(await readFile(new URL('./plugin.schema.json',import.met
 const validate=new Ajv({allErrors:true,strict:false}).compile(schema);
 export interface Manifest {
   schema:number;apiVersion:number;id:string;name:string;version:string;author:string;
-  ui:string;script:string;requiredFeatures?:string[];tasks?:{id:string;title:string}[];
+  ui:string;script:string;requiredFeatures?:string[];tasks?:{id:string;title:string}[];dataVersion?:number;preferences?:{key:string;type:string;default?:unknown;options?:Record<string,string>}[];
   permissions:{network:string[];background?:boolean;notifications?:boolean;forum?:('profiles'|'activity'|'following')[];connect?:string[];credentials?:Record<string,{requests:{origin:string}[]}>};
   card?:{widget:string;page?:string};pages?:{id:string;widget:string;presentation?:string;navigation?:{label:string;icon?:string}}[];links?:{page:string}[];
 }
@@ -47,6 +48,13 @@ export function checkManifest(raw:unknown):asserts raw is Manifest {
   resourcePath(m.ui);resourcePath(m.script);
   if(m.ui===m.script)fail('界面与脚本须使用不同文件');
   if(m.ui==='plugin.json'||m.script==='plugin.json')fail('资源文件不能覆盖清单');
+  if(m.dataVersion!==undefined&&!m.requiredFeatures?.includes('dataMigrations'))fail('数据版本须声明 dataMigrations');
+  if(m.preferences!==undefined&&!m.requiredFeatures?.includes('pluginPreferences'))fail('偏好设置须声明 pluginPreferences');
+  if(m.preferences&&new Set(m.preferences.map(p=>p.key)).size!==m.preferences.length)fail('偏好设置键重复');
+  for(const field of m.preferences??[]){
+    if(field.type==='toggle'&&field.default!==undefined&&typeof field.default!=='boolean')fail('开关偏好默认值须为布尔值');
+    if(field.type==='text'&&field.default!==undefined&&(typeof field.default!=='string'||field.default.length>512))fail('文本偏好默认值无效');
+    if(field.type==='choice'&&(!(typeof field.default==='string')||!(field.default in (field.options??{}))))fail('选择偏好需要有效默认值');}
   if(m.permissions.forum && m.schema<11)fail('论坛读取权限需要 schema 11');
   if(m.permissions.forum?.length&&!m.requiredFeatures?.includes('forumRead'))fail('论坛读取须声明 forumRead');
   if(m.pages?.some(p=>p.navigation)&&!m.requiredFeatures?.includes('navigationEntries'))fail('导航入口须声明 navigationEntries');
@@ -133,9 +141,9 @@ export async function buildProject(directory:string):Promise<{project:Project;fi
   await atomicWrite(await outputFile(project.root,'plugin.json'),JSON.stringify(project.manifest,null,2)+'\n');
   return {project,files};
 }
-export async function packProject(directory:string):Promise<{path:string;sha256:string;bytes:number}>{
+export async function packProject(directory:string,options:SigningOptions={}):Promise<{path:string;sha256:string;bytes:number}>{
   const {project,files}=await buildProject(directory);
-  const bytes=Buffer.from(JSON.stringify({manifest:project.manifest,files}));
+  const bytes=Buffer.from(JSON.stringify(await signBundle({manifest:project.manifest,files},options)));
   if(bytes.length>contract.limits.bundleBytes)fail('插件包过大');
   const path=await outputFile(project.root,`${project.manifest.id}-${project.manifest.version}.fluxplugin`);
   await atomicWrite(path,bytes);
@@ -143,18 +151,20 @@ export async function packProject(directory:string):Promise<{path:string;sha256:
 }
 
 /** 由实际构建产物生成市场草稿，提交仓库前仍由作者核对说明与截图。 */
-export async function createMarketEntry(directory:string,repository:string,tag:string){
+export async function createMarketEntry(directory:string,repository:string,tag:string,options:SigningOptions & {channel?:string}={}){
   const repo=new URL(repository);
   if(repo.protocol!=='https:'||repo.hostname!=='github.com'||!/^\/[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+\/?$/.test(repo.pathname)||repo.search||repo.hash||repo.username||repo.password)fail('仓库须为 GitHub HTTPS 地址');
   if(!tag||!/^[A-Za-z0-9._-]+$/.test(tag))fail('发布标签无效');
-  const result=await packProject(directory);
+  const result=await packProject(directory,options);
   const project=await loadProject(directory);
   const m=project.manifest as Manifest & {description?:string;icon?:string};
+  if(options.channel && !['stable','preview'].includes(options.channel))fail('发布渠道无效');
+  if(options.channel==='stable'&&!!prerelease(m.version))fail('测试版本不能声明稳定渠道');
   const file=result.path.split(/[\\/]/).at(-1)!;
   const entry={id:m.id,name:m.name,version:m.version,apiVersion:m.apiVersion,author:m.author,
     summary:m.description??m.name,description:m.description??m.name,repository:repo.href.replace(/\/$/,''),
     packageUrl:repo.href.replace(/\/$/,'')+'/releases/download/'+tag+'/'+encodeURIComponent(file),
-    sha256:result.sha256,icon:m.icon??'extension',categories:[],screenshots:[],changelog:'',requiredFeatures:m.requiredFeatures??[]};
+    channel:options.channel??(m.version.includes('-')?'preview':'stable'),sha256:result.sha256,icon:m.icon??'extension',categories:[],screenshots:[],changelog:'',requiredFeatures:m.requiredFeatures??[]};
   const path=await outputFile(project.root,'market-entry.json');await atomicWrite(path,JSON.stringify(entry,null,2)+'\n');
   return path;
 }

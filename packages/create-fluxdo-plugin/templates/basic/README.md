@@ -22,3 +22,11 @@ pnpm pack:plugin
 保存 TS/RFW 自动更新，正在进行的操作结束后生效。需要完整重启时在 App 确认。开发实例与正式插件隔离，退出会清空临时数据。
 
 发布包在 dist/*.fluxplugin；fluxdo market-entry --repository https://github.com/OWNER/REPO --tag VERSION 可生成市场条目草稿，补充说明与截图后提交目录仓库。工具与 SDK 固定使用同一版本 GitHub Release，提交 lockfile 以便复现。
+
+## 发布
+
+手动运行 GitHub Actions 的 Plugin release，填写标签并选择 stable 或 preview。流程检查代码、测试和安装包后生成草稿 Release；审阅后再发布，并将 artifact 中的 market-entry.json 提交到市场仓库。不要覆盖已发布的附件。
+
+可选仓库 Secret PLUGIN_SIGNING_KEY 保存 PEM 私钥；轮换时 PLUGIN_PREVIOUS_SIGNING_KEY 保存原密钥来授权新密钥。私钥不要提交到仓库。未配置密钥时生成无签名包，宿主会向用户说明。详情见工具仓库的发布文档。
+
+声明式偏好、语言与存储迁移见工具仓库 examples/data-migration。测试时可从 @fluxdo/plugin-sdk/testing 导入 createScenario，结合 virtualTimers 与 advance 模拟离线、拒绝权限、账号变化和重试。
