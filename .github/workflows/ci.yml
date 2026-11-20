@@ -37,7 +37,7 @@ jobs:
         with:
           repository: ${{ steps.host.outputs.repository }}
           # contract.hostReference.commit 记录最早兼容宿主。联调使用包含最新回归用例的提交。
-          ref: 358a632e4176e38d55c4a55a8ba1993cdf606e3c
+          ref: 5ec1ad72f5192b620e6caa4e64f403dfd2661f91
           path: app
           submodules: recursive
           persist-credentials: false
@@ -74,6 +74,25 @@ jobs:
       - name: Run real QuickJS HMR regression
         working-directory: app
         run: node --test tool/plugin_tools/native.test.mjs
+      - name: Prepare SVG transformer before parallel asset compilation
+        working-directory: app
+        timeout-minutes: 2
+        run: |
+          New-Item -ItemType Directory -Force build/plugin-ci | Out-Null
+          dart run jovial_svg_transformer --input=assets/logo.svg --output=build/plugin-ci/logo.si
+          exit $LASTEXITCODE
       - name: Run App pairing, updates and isolation regression
         working-directory: app
-        run: flutter test test/modules/metaverse/metaverse_navigation_forum_test.dart test/modules/metaverse/metaverse_navigation_ui_test.dart test/modules/metaverse/metaverse_development_test.dart test/modules/metaverse/metaverse_development_connection_test.dart test/modules/metaverse/metaverse_development_integration_test.dart
+        timeout-minutes: 10
+        run: |
+          flutter test --verbose --reporter expanded --file-reporter json:plugin-tools-tests.json test/modules/metaverse/metaverse_navigation_forum_test.dart test/modules/metaverse/metaverse_navigation_ui_test.dart test/modules/metaverse/metaverse_development_test.dart test/modules/metaverse/metaverse_development_connection_test.dart test/modules/metaverse/metaverse_development_integration_test.dart 2>&1 | Tee-Object -FilePath plugin-tools-build.log
+          exit $LASTEXITCODE
+      - name: Upload native test diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-host-tests
+          path: |
+            app/plugin-tools-tests.json
+            app/plugin-tools-build.log
+          if-no-files-found: ignore
