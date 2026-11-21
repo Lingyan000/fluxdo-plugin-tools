@@ -396,7 +396,9 @@
           "pluginPreferences",
           "pageChrome",
           "loadingPlaceholders",
-          "navigationReplacement"
+          "navigationReplacement",
+          "credentialClaims",
+          "iconButtonContent"
         ]
       },
       "uniqueItems": true
