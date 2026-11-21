@@ -4,10 +4,10 @@ FluxDO 原生插件的 CLI、项目脚手架和 TypeScript SDK。插件作者只
 
 ## 创建插件
 
-0.9.0 通过 GitHub Release 分发三个独立 npm 格式包，尚未发布到 npm registry。
+0.10.0 通过 GitHub Release 分发三个独立 npm 格式包，尚未发布到 npm registry。
 
 ~~~sh
-npx --yes --package=https://github.com/Lingyan000/fluxdo-plugin-tools/releases/download/v0.9.0/create-fluxdo-plugin-0.9.0.tgz create-fluxdo-plugin my-plugin --id com.example.myplugin
+npx --yes --package=https://github.com/Lingyan000/fluxdo-plugin-tools/releases/download/v0.10.0/create-fluxdo-plugin-0.10.0.tgz create-fluxdo-plugin my-plugin --id com.example.myplugin
 cd my-plugin
 npm install
 npm run check
@@ -84,7 +84,7 @@ pnpm test 会把三个包制成实际 tgz，在仓库外安装脚手架和依赖
 
 ## 数据迁移、偏好与发行
 
-SDK 0.9.0 提供 host.environment、preferences.get 与 storage.migrate 类型，以及 [数据迁移与偏好示例](examples/data-migration/)。清单声明 dataVersion 和 pluginPreferences，迁移按账号在副本上执行，成功后才切换，不能联网或操作凭证。
+SDK 0.10.0 提供 host.environment、preferences.get 与 storage.migrate 类型，以及 [数据迁移与偏好示例](examples/data-migration/)。清单声明 dataVersion 和 pluginPreferences，迁移按账号在副本上执行，成功后才切换，不能联网或操作凭证。
 
 测试工具导出 createScenario，可以控制离线、账号、权限和凭证过期；createPluginHarness({virtualTimers:true}) 的 advance 推进虚拟时间。模拟场景只验证业务，不代替真实宿主隔离与系统调度。
 
@@ -93,3 +93,5 @@ pack 与 market-entry 接受 --key private.pem，轮换时另提供 --previous-k
 脚手架的 .github/workflows/plugin-release.yml 经手动触发后校验并创建草稿 Release，带包、摘要和市场条目产物。签名可用仓库 Secrets PLUGIN_SIGNING_KEY 配置，轮换用 PLUGIN_PREVIOUS_SIGNING_KEY；私钥不输出、不进入产物，并从临时目录清理。作者核对草稿后发布。已发布坏版本应在目录标记 withdrawn 或加入 withdrawnVersions，保留原因并发布修复版本，不修改原附件。
 
 页面可声明 `appBar: {title: "PageTitle", actions: "PageActions"}` 并要求 `pageChrome`。插槽引用 RFW 组件，与正文共享数据与事件；返回和关闭由宿主保留。`Button.fullWidth` 提供填满分配区域的操作，`IconButton` 支持 `enabled`、`loading`、`selected`，`Statistics.loading` 显示骨架。
+
+首次取数可声明 `loadingPlaceholders`，使用 `Skeleton`、`SkeletonBox` 和列表/网格的 `loadingPlaceholder`；刷新已有条目时保留内容。完成步骤可声明 `navigationReplacement`，调用 `ctx.api.navigate(page, params, {replace: true})` 或 `prepareNavigation(page, {replace: true})`，返回时跳过已完成页面。替换仅适用于当前插件的普通页面。

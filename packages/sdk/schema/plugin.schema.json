@@ -394,7 +394,9 @@
           "dataMigrations",
           "hostEnvironment",
           "pluginPreferences",
-          "pageChrome"
+          "pageChrome",
+          "loadingPlaceholders",
+          "navigationReplacement"
         ]
       },
       "uniqueItems": true
