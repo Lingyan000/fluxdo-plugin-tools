@@ -51,3 +51,14 @@ test('设备配对拒绝错误令牌和浏览器来源，重连替换旧连接�
   b.socket.send(JSON.stringify({type:'log',entry:{pluginId:'another.plugin',message:'forbidden'}}));
   assert.equal((await invalid)[0],1008);assert.equal(logs.length,1);
 });
+
+test('无线配对使用独立证书，错误证书或明文连接均被拒绝',async t=>{
+  const {root}=await project(t);const server=await createDeviceServer({root,port:0,lanHost:'127.0.0.1'});t.after(()=>server.close());
+  const url=new URL(server.url);assert.match(url.searchParams.get('cert'),/^[a-f0-9]{64}$/);
+  const bad=new WebSocket('wss://127.0.0.1:'+server.port+'/fluxdo');const [error]=await once(bad,'error');assert.match(error.message,/self-signed|certificate/i);
+  const ws=new WebSocket('wss://127.0.0.1:'+server.port+'/fluxdo',{rejectUnauthorized:false,headers:{Authorization:'Bearer '+url.searchParams.get('key')}});
+  const message=once(ws,'message');await once(ws,'open');
+  assert.equal(ws._socket.getPeerCertificate().fingerprint256.replaceAll(':','').toLowerCase(),url.searchParams.get('cert'));
+  assert.equal(JSON.parse(String((await message)[0])).type,'project');ws.close();
+  await assert.rejects(createDeviceServer({root,lanHost:'8.8.8.8'}),/本机局域网/);
+});

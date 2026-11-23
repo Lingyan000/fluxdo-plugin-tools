@@ -8,5 +8,5 @@ export function createPluginHarness(options:HarnessOptions):{
 
 export function createScenario(options?:{account?:{id:number;username:string}|null;permissions?:Record<string,boolean>;environment?:{locale:string;platform:string;timeZoneOffsetMinutes:number};preferences?:Record<string,unknown>}):{
  mocks:Record<string,(params:any)=>unknown>;grant(name:string,value?:boolean):void;account(value:{id:number;username:string}|null):void;
- offline(value:boolean):void;expire(value:boolean):void;respond(value:unknown):void;environment(value:Record<string,unknown>):void;preferences(value:Record<string,unknown>):void;
+ notificationSystem(value:'allowed'|'denied'|'unknown'):void;offline(value:boolean):void;expire(value:boolean):void;respond(value:unknown):void;environment(value:Record<string,unknown>):void;preferences(value:Record<string,unknown>):void;
 };

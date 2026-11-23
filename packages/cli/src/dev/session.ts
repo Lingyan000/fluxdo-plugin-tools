@@ -1,5 +1,9 @@
 import {createServer} from 'node:http';
-import {randomBytes, timingSafeEqual} from 'node:crypto';
+import {createServer as createSecureServer} from 'node:https';
+import {isIP} from 'node:net';
+import {networkInterfaces} from 'node:os';
+import {generate} from 'selfsigned';
+import {randomBytes, timingSafeEqual, X509Certificate} from 'node:crypto';
 import {readFile} from 'node:fs/promises';
 import {relative, resolve} from 'node:path';
 import {WebSocketServer, WebSocket} from 'ws';
@@ -9,18 +13,31 @@ import {loadProject} from '../project.js';
 export interface DeviceServerOptions {
   root: string;
   port?: number;
+  lanHost?: string;
   onLog?: (entry: Record<string, unknown>) => void;
   onStatus?: (message: string) => void;
 }
-/** 只监听回环；手机使用 adb reverse。令牌不经过 HTTP URL、浏览器或持久化配置。 */
+/** 默认监听回环；显式局域网模式使用每次启动生成的证书及指纹配对。 */
 export async function createDeviceServer(options: DeviceServerOptions) {
+  const host=options.lanHost??'127.0.0.1';
+  if(options.lanHost){
+    const [a,b]=host.split('.').map(Number);
+    const local=isIP(host)===4&&(a===10||a===127||a===192&&b===168||a===172&&b!>=16&&b!<=31);
+    if(!local||!Object.values(networkInterfaces()).flat().some(address=>address?.address===host))throw new Error('请使用本机局域网 IPv4 地址');
+  }
   const initial = await loadProject(options.root);
   const token = randomBytes(24).toString('base64url');
   const session = randomBytes(16).toString('hex');
   const runner = await readFile(new URL('./runner.js', import.meta.url), 'utf8');
   let revision = 1, closed = false, active: WebSocket | undefined;
   let project = initial;
-  const http = createServer((_request, response) => { response.writeHead(404); response.end(); });
+  const certificate=options.lanHost?await generate([{name:'commonName',value:'FluxDO plugin development'}],{
+    keyType:'ec',curve:'P-256',algorithm:'sha256',notBeforeDate:new Date(Date.now()-60000),notAfterDate:new Date(Date.now()+24*3600000),
+    extensions:[{name:'basicConstraints',cA:false},{name:'keyUsage',digitalSignature:true},{name:'extKeyUsage',serverAuth:true},{name:'subjectAltName',altNames:[{type:7,ip:host}]}],
+  }):undefined;
+  const fingerprint=certificate?new X509Certificate(certificate.cert).fingerprint256.replaceAll(':','').toLowerCase():undefined;
+  const listener: import('node:http').RequestListener=(_request,response)=>{response.writeHead(404);response.end();};
+  const http=certificate?createSecureServer({key:certificate.private,cert:certificate.cert,minVersion:'TLSv1.2'},listener):createServer(listener);
   http.maxConnections = 8;
   http.requestTimeout = 10000;
   const sockets = new WebSocketServer({noServer: true, maxPayload: 1024 * 1024, perMessageDeflate: false});
@@ -90,10 +107,10 @@ export async function createDeviceServer(options: DeviceServerOptions) {
     });
   };
   modules.watch(changed);
-  try { await new Promise<void>((done,reject)=>{http.once('error',reject);http.listen(options.port??5174,'127.0.0.1',done);}); }
+  try { await new Promise<void>((done,reject)=>{http.once('error',reject);http.listen(options.port??5174,host,done);}); }
   catch(error){await modules.close();sockets.close();throw error;}
   const port=(http.address() as {port:number}).port;
-  const url=`fluxdo-dev://127.0.0.1:${port}?key=${token}`;
+  const url=`fluxdo-dev://${host}:${port}?key=${token}${fingerprint?'&cert='+fingerprint:''}`;
   return {port,url,session,
     async close(){
       if(closed)return;closed=true;

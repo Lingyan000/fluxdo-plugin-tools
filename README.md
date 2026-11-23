@@ -4,10 +4,10 @@ FluxDO 原生插件的 CLI、项目脚手架和 TypeScript SDK。插件作者只
 
 ## 创建插件
 
-0.11.0 通过 GitHub Release 分发三个独立 npm 格式包，尚未发布到 npm registry。
+0.12.0 通过 GitHub Release 分发三个独立 npm 格式包，尚未发布到 npm registry。
 
 ~~~sh
-npx --yes --package=https://github.com/Lingyan000/fluxdo-plugin-tools/releases/download/v0.11.0/create-fluxdo-plugin-0.11.0.tgz create-fluxdo-plugin my-plugin --id com.example.myplugin
+npx --yes --package=https://github.com/Lingyan000/fluxdo-plugin-tools/releases/download/v0.12.0/create-fluxdo-plugin-0.12.0.tgz create-fluxdo-plugin my-plugin --id com.example.myplugin
 cd my-plugin
 npm install
 npm run check
@@ -84,7 +84,7 @@ pnpm test 会把三个包制成实际 tgz，在仓库外安装脚手架和依赖
 
 ## 数据迁移、偏好与发行
 
-SDK 0.11.0 提供 host.environment、preferences.get 与 storage.migrate 类型，以及 [数据迁移与偏好示例](examples/data-migration/)。清单声明 dataVersion 和 pluginPreferences，迁移按账号在副本上执行，成功后才切换，不能联网或操作凭证。
+SDK 0.12.0 提供 host.environment、preferences.get 与 storage.migrate 类型，以及 [数据迁移与偏好示例](examples/data-migration/)。清单声明 dataVersion 和 pluginPreferences，迁移按账号在副本上执行，成功后才切换，不能联网或操作凭证。
 
 测试工具导出 createScenario，可以控制离线、账号、权限和凭证过期；createPluginHarness({virtualTimers:true}) 的 advance 推进虚拟时间。模拟场景只验证业务，不代替真实宿主隔离与系统调度。
 
@@ -97,3 +97,13 @@ pack 与 market-entry 接受 --key private.pem，轮换时另提供 --previous-k
 首次取数可声明 `loadingPlaceholders`，使用 `Skeleton`、`SkeletonBox` 和列表/网格的 `loadingPlaceholder`；刷新已有条目时保留内容。完成步骤可声明 `navigationReplacement`，调用 `ctx.api.navigate(page, params, {replace: true})` 或 `prepareNavigation(page, {replace: true})`，返回时跳过已完成页面。替换仅适用于当前插件的普通页面。
 
 恢复服务会话的用户资料可声明 `credentialClaims`，通过 `credentials.status(name, {jwt: true})` 读取 JWT 声明；声明不替代服务端身份验证，也不返回凭证原文。标题栏头像可声明 `iconButtonContent`，用 `IconButton(child: Avatar(...))` 保留按钮提示、触区与键盘交互。
+
+## 无线开发连接
+
+在同一局域网运行 `fluxdo dev --lan 192.168.1.10`，其中地址须为开发机的实际 IPv4 地址。将输出的完整配对地址粘贴到 App 开发中心。Android 无需 adb reverse；iOS 首次使用需要允许本地网络访问。服务仅绑定指定网卡，使用临时 TLS 证书和配对地址中的 SHA-256 指纹，重启服务后须重新配对。开发端口只对可信网络开放。
+
+## npm 分发
+
+所有包具备公开发布配置，`npm.yml` 手动工作流发布经过摘要验证的 GitHub Release 产物。首次发布需要 npm 组织及包名称权限；配置 npm Trusted Publisher 或环境 `npm` 的 `NPM_TOKEN` 后运行。没有完成 npm 发布时继续使用 Release 安装命令。
+
+发布成功后可使用 `npm create fluxdo-plugin@0.12.0 -- my-plugin --distribution npm`，将脚手架依赖指向 npm。默认仍使用 GitHub Release，便于在 npm 尚未配置时使用。npm 发布的版本不可覆盖。

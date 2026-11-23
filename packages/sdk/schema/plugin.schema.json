@@ -398,7 +398,8 @@
           "loadingPlaceholders",
           "navigationReplacement",
           "credentialClaims",
-          "iconButtonContent"
+          "iconButtonContent",
+          "notificationStatus"
         ]
       },
       "uniqueItems": true

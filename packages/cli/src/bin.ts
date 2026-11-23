@@ -22,11 +22,12 @@ const help=`FluxDO 插件工具
   --channel stable|preview       市场发布渠道
   fluxdo doctor              检查 Node 工具链
   fluxdo dev [目录]           连接 App 原生预览（默认端口 5174）
+  fluxdo dev [目录] --lan 本机IP  加密无线配对（Android / iOS / 桌面）
   fluxdo dev [目录] --stdio   通过标准输入输出提供开发模块协议
 
 在 App 开发中心打开「连接开发工具」并粘贴配对地址。Android 先运行 adb reverse tcp:5174 tcp:5174。`;
 try{
-  const {values,positionals}=parseArgs({allowPositionals:true,options:{help:{type:'boolean',short:'h'},version:{type:'boolean',short:'v'},stdio:{type:'boolean'},port:{type:'string'},repository:{type:'string'},tag:{type:'string'},key:{type:'string'},'previous-key':{type:'string'},channel:{type:'string'}}});
+  const {values,positionals}=parseArgs({allowPositionals:true,options:{help:{type:'boolean',short:'h'},version:{type:'boolean',short:'v'},stdio:{type:'boolean'},lan:{type:'string'},port:{type:'string'},repository:{type:'string'},tag:{type:'string'},key:{type:'string'},'previous-key':{type:'string'},channel:{type:'string'}}});
   if(values.version)console.log(metadata.version);
   else if(values.help||!positionals.length)console.log(help);
   else {
@@ -55,18 +56,19 @@ try{
         if(!values.stdio){
           const port=values.port===undefined?5174:Number(values.port);
           if(!Number.isInteger(port)||port<0||port>65535)throw new Error('端口无效');
-          const server=await createDeviceServer({root,port,
+          const server=await createDeviceServer({root,port,lanHost:values.lan,
             onStatus:message=>console.error(message),
             onLog:entry=>console.log(JSON.stringify(entry)),
           });
           console.error('在 App 开发中心粘贴配对地址：\n'+server.url);
-          console.error(`Android USB 转发：adb reverse tcp:${server.port} tcp:${server.port}`);
+          if(!values.lan)console.error(`Android USB 转发：adb reverse tcp:${server.port} tcp:${server.port}`);
           await new Promise<void>(done=>{
             const close=()=>{void server.close().then(done);};
             process.once('SIGINT',close);process.once('SIGTERM',close);
           });
           break;
         }
+        if(values.lan)throw new Error('--lan 不能与 --stdio 同时使用');
         const project=await loadProject(root);
         const send=(payload:unknown)=>process.stdout.write(JSON.stringify(payload)+'\n');
         const server=await createPluginDevServer({root:project.root,onError:error=>process.stderr.write(String(error)+'\n')});

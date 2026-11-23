@@ -44,3 +44,11 @@ test('卡片默认页需要能力声明且只能引用普通页面',async()=>{
  for(const change of [{requiredFeatures:[]},{card:{widget:'Card',page:'missing'}},{card:{widget:'Card',page:''}},{pages:[{id:'home',widget:'Home',presentation:'modal',title:'弹层'}]}])assert.throws(()=>checkManifest({...valid,...change}));
  checkManifest({...valid,card:{widget:'Card'},requiredFeatures:[]});
 });
+
+test('npm 分发模板固定同版依赖，默认 GitHub 分发仍可用',async t=>{
+ const temp=await mkdtemp(join(tmpdir(),'fluxdo-npm-'));t.after(()=>rm(temp,{recursive:true,force:true}));
+ const target=await createPlugin({directory:join(temp,'npm-demo'),distribution:'npm'});
+ const pkg=JSON.parse(await readFile(join(target,'package.json'),'utf8'));
+ const version=JSON.parse(await readFile(join(root,'packages/sdk/package.json'),'utf8')).version;
+ assert.equal(pkg.devDependencies['@fluxdo/plugin-sdk'],version);assert.equal(pkg.devDependencies['@fluxdo/plugin-cli'],version);
+});

@@ -37,7 +37,7 @@ jobs:
         with:
           repository: ${{ steps.host.outputs.repository }}
           # contract.hostReference.commit 记录最早兼容宿主。联调使用包含最新回归用例的提交。
-          ref: bc61e477928fb69ee3d8e5484696d3978fc815cf
+          ref: 5dca00f149648135f417498cfddf0da66772e177
           path: app
           submodules: recursive
           persist-credentials: false
@@ -71,6 +71,9 @@ jobs:
       - name: Validate service UI using shipped parser
         working-directory: tools
         run: node --test test/rfw.test.mjs
+      - name: Build and verify native script engine
+        working-directory: app
+        run: dart run tool/plugin_tools/quickjs_peer.dart --check
       - name: Run real QuickJS HMR regression
         working-directory: app
         run: node --test tool/plugin_tools/native.test.mjs

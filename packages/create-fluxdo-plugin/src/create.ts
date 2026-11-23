@@ -2,7 +2,7 @@ import {mkdir,readFile,readdir,writeFile,rename,lstat,rm,mkdtemp} from 'node:fs/
 import {resolve,dirname,basename,join} from 'node:path';
 import {fileURLToPath} from 'node:url';
 
-export interface CreateOptions {directory:string;id?:string;name?:string;author?:string;template?:string}
+export interface CreateOptions {directory:string;id?:string;name?:string;author?:string;template?:string;distribution?:'github'|'npm'}
 const templates=fileURLToPath(new URL('../templates/',import.meta.url));
 export async function templateNames():Promise<string[]>{return (await readdir(templates,{withFileTypes:true})).filter(v=>v.isDirectory()).map(v=>v.name).sort();}
 export async function createPlugin(options:CreateOptions):Promise<string>{
@@ -33,6 +33,10 @@ export async function createPlugin(options:CreateOptions):Promise<string>{
     Object.assign(manifest,{id,name,author});
     await writeFile(join(staging,'plugin.json'),JSON.stringify(manifest,null,2)+'\n');
     const packageJson=JSON.parse(await readFile(join(staging,'package.json'),'utf8'));packageJson.name=slug;
+    if(options.distribution==='npm'){
+      const version=JSON.parse(await readFile(new URL('../package.json',import.meta.url),'utf8')).version;
+      for(const name of ['@fluxdo/plugin-cli','@fluxdo/plugin-sdk'])packageJson.devDependencies[name]=version;
+    }
     await writeFile(join(staging,'package.json'),JSON.stringify(packageJson,null,2)+'\n');
     await rename(staging,target);
     return target;
