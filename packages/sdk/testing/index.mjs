@@ -6,11 +6,13 @@ const prelude=readFileSync(new URL('./prelude.js',import.meta.url),'utf8');
 /** 插件作者的受控测试宿主。所有外部 API 必须显式模拟；不连接真实账号。 */
 export function createPluginHarness({script,mocks={},initialStorage={},virtualTimers=false}){
   const calls=[],logs=[],data={},storage=structuredClone(initialStorage),timers=new Map();
+  let taskResult;
   let closed=false,idleWaiters=[],pending=0,clock=0;
   const idle=()=>{if(pending===0){for(const done of idleWaiters)done();idleWaiters=[];}};
   const context=vm.createContext({sendMessage(_channel,raw){
     if(closed)return;
     const m=JSON.parse(raw);
+    if(m.t==='task.done'){taskResult=m;return;}
     if(m.t==='event'){pending+=m.phase==='start'?1:-1;idle();return;}
     if(m.t==='log'||m.t==='error'){logs.push(m);return;}
     if(m.t==='data'){(data[m.s]??={})[m.k]=structuredClone(m.v);return;}
@@ -48,8 +50,11 @@ export function createPluginHarness({script,mocks={},initialStorage={},virtualTi
   }
   return {calls,logs,data,storage,
     async dispatch(event,args={},surface={surface:'s1',kind:'card',params:{}}){
+      taskResult=undefined;
       evaluate(`__fluxdoMetaverse.dispatch(${JSON.stringify(event)},${JSON.stringify(JSON.stringify(surface))},${JSON.stringify(JSON.stringify(args))})`);
       await untilIdle();
+      if(taskResult?.ok===false)throw new Error(taskResult.error);
+      return taskResult?.result;
     },
     async advance(milliseconds){
       if(!virtualTimers||!Number.isFinite(milliseconds)||milliseconds<0)throw new Error('需要非负虚拟时间');

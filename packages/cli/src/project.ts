@@ -24,7 +24,7 @@ const validate=new Ajv({allErrors:true,strict:false}).compile(schema);
 export interface Manifest {
   schema:number;apiVersion:number;id:string;name:string;version:string;author:string;
   ui:string;script:string;requiredFeatures?:string[];tasks?:{id:string;title:string}[];dataVersion?:number;preferences?:{key:string;type:string;default?:unknown;options?:Record<string,string>}[];
-  permissions:{network:string[];background?:boolean;notifications?:boolean;forum?:('profiles'|'activity'|'following')[];connect?:string[];credentials?:Record<string,{requests:{origin:string}[]}>};
+  permissions:{network:string[];identity?:boolean;background?:boolean;notifications?:boolean;forum?:('profiles'|'activity'|'following')[];connect?:string[];credentials?:Record<string,{requests:{origin:string}[]}>};
   card?:{widget:string;page?:string};pages?:{id:string;widget:string;appBar?:{title?:string;actions?:string};presentation?:string;navigation?:{label:string;icon?:string}}[];links?:{page:string}[];
 }
 export interface Project { root:string;manifest:Manifest;entry:string;ui:string }
@@ -63,6 +63,7 @@ export function checkManifest(raw:unknown):asserts raw is Manifest {
     for(const field of m.preferences??[]){limits['preferences.'+field.key+'.title']=80;for(const key of Object.keys(field.options??{}))limits['preferences.'+field.key+'.options.'+key]=80;}
     for(const locale of Object.values((m as any).locales))for(const [key,text]of Object.entries(locale as Record<string,string>))if(!limits[key]||!text.trim()||text.length>limits[key]!||/[\x00-\x1f\x7f]/.test(text))fail('清单翻译字段无效或过长');
   }
+  if(m.requiredFeatures?.includes('accountDataMigration')&&(!m.permissions.identity||(!m.permissions.forum?.length&&!m.tasks?.length&&!m.permissions.notifications&&!m.requiredFeatures?.includes('navigationBadge'))))fail('账号数据迁移需要 identity 和账号分区能力');
   if(m.permissions.forum && m.schema<11)fail('论坛读取权限需要 schema 11');
   if(m.permissions.forum?.length&&!m.requiredFeatures?.includes('forumRead'))fail('论坛读取须声明 forumRead');
   if(m.pages?.some(p=>p.navigation)&&!m.requiredFeatures?.includes('navigationEntries'))fail('导航入口须声明 navigationEntries');

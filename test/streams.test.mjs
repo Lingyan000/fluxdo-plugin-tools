@@ -30,7 +30,10 @@ test('TypeScript 按事件名称推导帧与连接状态类型',async()=>{
  try {
   const file=join(dir,'stream.ts');
   await writeFile(file,`fluxdo.on('stream.event',(ctx,frame)=>{const id:string=frame.lastEventId;ctx.setData('value',JSON.parse(frame.data));});
-  fluxdo.on('stream.state',(ctx,state)=>{const status:number|undefined=state.status;ctx.setData('state',state.state);});`);
+  fluxdo.on('stream.state',(ctx,state)=>{const status:number|undefined=state.status;ctx.setData('state',state.state);});
+  fluxdo.on('storage.partition',async(ctx,args)=>{const id:number=args.accountId;return {legacy:args.legacy,account:args.account};});
+  // @ts-expect-error 迁移处理器必须返回两份数据。
+  fluxdo.on('storage.partition',async()=>{});`);
   const result=spawnSync(process.execPath,[resolve(root,'node_modules/typescript/bin/tsc'),'--noEmit','--skipLibCheck','--target','es2022','--types',resolve(root,'packages/sdk/types/global.d.ts'),file],{encoding:'utf8',windowsHide:true});
   assert.equal(result.status,0,result.stdout+result.stderr);
  }finally{await rm(dir,{recursive:true,force:true});}
