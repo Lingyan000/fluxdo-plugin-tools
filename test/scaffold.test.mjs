@@ -52,3 +52,11 @@ test('npm 分发模板固定同版依赖，默认 GitHub 分发仍可用',async 
  const version=JSON.parse(await readFile(join(root,'packages/sdk/package.json'),'utf8')).version;
  assert.equal(pkg.devDependencies['@fluxdo/plugin-sdk'],version);assert.equal(pkg.devDependencies['@fluxdo/plugin-cli'],version);
 });
+
+test('本地化模板保留作者名称，译文只能覆盖显示文字',async t=>{
+ const temp=await mkdtemp(join(tmpdir(),'fluxdo-localized-'));t.after(()=>rm(temp,{recursive:true,force:true}));
+ const target=await createPlugin({directory:join(temp,'local-demo'),template:'localized',name:'产品名称'});
+ const m=JSON.parse(await readFile(join(target,'plugin.json'),'utf8'));checkManifest(m);assert.equal(m.name,'产品名称');assert.equal(m.locales.en.name,undefined);
+ assert.throws(()=>checkManifest({...m,locales:{en:{'permissions.network':'evil.example'}}}));
+ assert.throws(()=>checkManifest({...m,locales:{en:{name:'bad'+String.fromCharCode(10)}}}));
+});

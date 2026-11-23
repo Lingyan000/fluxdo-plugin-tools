@@ -1,0 +1,1 @@
+export function createTranslator(catalogs:Record<string,Record<string,string>>,baseLocale:string):{setLocale(locale:string):void;readonly locale:string;text(key:string,values?:Record<string,string|number>):string};

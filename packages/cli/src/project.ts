@@ -55,6 +55,14 @@ export function checkManifest(raw:unknown):asserts raw is Manifest {
     if(field.type==='toggle'&&field.default!==undefined&&typeof field.default!=='boolean')fail('开关偏好默认值须为布尔值');
     if(field.type==='text'&&field.default!==undefined&&(typeof field.default!=='string'||field.default.length>512))fail('文本偏好默认值无效');
     if(field.type==='choice'&&(!(typeof field.default==='string')||!(field.default in (field.options??{}))))fail('选择偏好需要有效默认值');}
+  if((m as any).locales){
+    if(!m.requiredFeatures?.includes('manifestLocalization'))fail('清单翻译须声明 manifestLocalization');
+    const limits:Record<string,number>={name:40,description:200};
+    for(const page of m.pages??[]){limits['pages.'+page.id+'.title']=40;if(page.navigation)limits['pages.'+page.id+'.navigation.label']=12;}
+    for(const task of m.tasks??[])limits['tasks.'+task.id+'.title']=80;
+    for(const field of m.preferences??[]){limits['preferences.'+field.key+'.title']=80;for(const key of Object.keys(field.options??{}))limits['preferences.'+field.key+'.options.'+key]=80;}
+    for(const locale of Object.values((m as any).locales))for(const [key,text]of Object.entries(locale as Record<string,string>))if(!limits[key]||!text.trim()||text.length>limits[key]!||/[\x00-\x1f\x7f]/.test(text))fail('清单翻译字段无效或过长');
+  }
   if(m.permissions.forum && m.schema<11)fail('论坛读取权限需要 schema 11');
   if(m.permissions.forum?.length&&!m.requiredFeatures?.includes('forumRead'))fail('论坛读取须声明 forumRead');
   if(m.pages?.some(p=>p.navigation)&&!m.requiredFeatures?.includes('navigationEntries'))fail('导航入口须声明 navigationEntries');
@@ -165,6 +173,7 @@ export async function createMarketEntry(directory:string,repository:string,tag:s
   const entry={id:m.id,name:m.name,version:m.version,apiVersion:m.apiVersion,author:m.author,
     summary:m.description??m.name,description:m.description??m.name,repository:repo.href.replace(/\/$/,''),
     packageUrl:repo.href.replace(/\/$/,'')+'/releases/download/'+tag+'/'+encodeURIComponent(file),
+    locales:Object.fromEntries(Object.entries((m as any).locales??{}).map(([locale,value])=>{const v=value as Record<string,string>;return [locale,{...(v.name?{name:v.name}:{}),...(v.description?{summary:v.description,description:v.description}:{})}];})),
     channel:options.channel??(m.version.includes('-')?'preview':'stable'),sha256:result.sha256,icon:m.icon??'extension',categories:[],screenshots:[],changelog:'',requiredFeatures:m.requiredFeatures??[]};
   const path=await outputFile(project.root,'market-entry.json');await atomicWrite(path,JSON.stringify(entry,null,2)+'\n');
   return path;

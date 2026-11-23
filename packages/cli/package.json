@@ -1,5 +1,5 @@
 {
-  "version": "0.12.0",
+  "version": "0.13.0",
   "type": "module",
   "license": "GPL-3.0-only",
   "engines": {
@@ -16,7 +16,8 @@
     "templates",
     "README.md",
     "LICENSE",
-    "vendor"
+    "vendor",
+    "localization"
   ],
   "scripts": {
     "check": "tsc --noEmit",
@@ -34,7 +35,11 @@
       "types": "./dist/dev/server.d.mts",
       "import": "./dist/dev/server.mjs"
     },
-    "./runner": "./dist/dev/runner.js"
+    "./runner": "./dist/dev/runner.js",
+    "./localization": {
+      "types": "./localization/compiler.d.mts",
+      "import": "./localization/compiler.mjs"
+    }
   },
   "dependencies": {
     "@jridgewell/trace-mapping": "0.3.31",
@@ -45,7 +50,9 @@
     "semver": "7.8.6",
     "typescript": "7.0.2",
     "vite": "8.3.8",
-    "ws": "8.23.0"
+    "ws": "8.23.0",
+    "acorn": "8.19.0",
+    "opencc-js": "1.4.2"
   },
   "devDependencies": {
     "@fluxdo/plugin-sdk": "workspace:*",

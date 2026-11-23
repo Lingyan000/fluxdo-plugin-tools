@@ -1,0 +1,21 @@
+{
+  "name": "my-plugin",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "check": "fluxdo check",
+    "build": "fluxdo build",
+    "pack:plugin": "fluxdo pack",
+    "dev": "fluxdo dev",
+    "doctor": "fluxdo doctor",
+    "test": "fluxdo test"
+  },
+  "engines": {
+    "node": ">=24.11.0"
+  },
+  "devDependencies": {
+    "@fluxdo/plugin-cli": "https://github.com/Lingyan000/fluxdo-plugin-tools/releases/download/v0.13.0/fluxdo-plugin-cli-0.13.0.tgz",
+    "@fluxdo/plugin-sdk": "https://github.com/Lingyan000/fluxdo-plugin-tools/releases/download/v0.13.0/fluxdo-plugin-sdk-0.13.0.tgz"
+  }
+}

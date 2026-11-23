@@ -1,5 +1,6 @@
 import {createServer} from 'node:http';
 import {createServer as createSecureServer} from 'node:https';
+import type {Socket} from 'node:net';
 import {isIP} from 'node:net';
 import {networkInterfaces} from 'node:os';
 import {generate} from 'selfsigned';
@@ -31,13 +32,22 @@ export async function createDeviceServer(options: DeviceServerOptions) {
   const runner = await readFile(new URL('./runner.js', import.meta.url), 'utf8');
   let revision = 1, closed = false, active: WebSocket | undefined;
   let project = initial;
+  let inspection:Record<string,unknown>|undefined;
+  let inspectedAt=0;
   const certificate=options.lanHost?await generate([{name:'commonName',value:'FluxDO plugin development'}],{
     keyType:'ec',curve:'P-256',algorithm:'sha256',notBeforeDate:new Date(Date.now()-60000),notAfterDate:new Date(Date.now()+24*3600000),
     extensions:[{name:'basicConstraints',cA:false},{name:'keyUsage',digitalSignature:true},{name:'extKeyUsage',serverAuth:true},{name:'subjectAltName',altNames:[{type:7,ip:host}]}],
   }):undefined;
   const fingerprint=certificate?new X509Certificate(certificate.cert).fingerprint256.replaceAll(':','').toLowerCase():undefined;
-  const listener: import('node:http').RequestListener=(_request,response)=>{response.writeHead(404);response.end();};
+  const listener: import('node:http').RequestListener=(request,response)=>{
+    const supplied=Buffer.from(request.headers.authorization??''),expected=Buffer.from('Bearer '+token);
+    if(request.url!=='/diagnostics'||request.method!=='GET'||request.headers.origin||supplied.length!==expected.length||!timingSafeEqual(supplied,expected)){response.writeHead(404);response.end();return;}
+    response.writeHead(200,{'Content-Type':'application/json','Cache-Control':'no-store'});
+    response.end(JSON.stringify({connected:active?.readyState===WebSocket.OPEN,inspectedAt,inspection}));
+  };
   const http=certificate?createSecureServer({key:certificate.private,cert:certificate.cert,minVersion:'TLSv1.2'},listener):createServer(listener);
+  const connections=new Set<Socket>();
+  http.on('connection',socket=>{connections.add(socket);socket.once('close',()=>connections.delete(socket));});
   http.maxConnections = 8;
   http.requestTimeout = 10000;
   const sockets = new WebSocketServer({noServer: true, maxPayload: 1024 * 1024, perMessageDeflate: false});
@@ -70,6 +80,8 @@ export async function createDeviceServer(options: DeviceServerOptions) {
     const budget = setInterval(()=>{count=0;},1000);
     const connection = modules.connect(payload => send(ws,{type:'vite',payload}));
     snapshot(ws);
+    inspection=undefined;inspectedAt=0;
+    const inspect=()=>send(ws,{type:'inspect'});inspect();const inspectTimer=setInterval(inspect,5000);
     ws.on('message', (bytes,isBinary) => {
       try {
         if (isBinary || ++count>240) throw new Error('开发消息过多');
@@ -80,12 +92,15 @@ export async function createDeviceServer(options: DeviceServerOptions) {
           const entry = message.entry as Record<string,unknown>;
           if (entry.pluginId !== project.manifest.id) throw new Error('日志不属于当前插件');
           options.onLog?.({...entry, message: modules.mapStack(String(entry.message??''))});
+        } else if(message?.type==='inspection'){
+          if(message.protocolVersion!==1||!Array.isArray(message.features)||Buffer.byteLength(JSON.stringify(message))>128*1024)throw new Error('检查响应无效');
+          inspection=message;inspectedAt=Date.now();
         } else if (message?.type === 'status') options.onStatus?.(String(message.message).slice(0,4096));
         else throw new Error('未知开发消息');
       } catch (error) { send(ws,{type:'diagnostic',message:String(error)}); ws.close(1008,'invalid packet'); }
     });
     ws.on('error',()=>{});
-    ws.on('close',()=>{clearInterval(budget);connection.close();if(active===ws){active=undefined;options.onStatus?.('设备已断开');}});
+    ws.on('close',()=>{clearInterval(budget);clearInterval(inspectTimer);connection.close();if(active===ws){active=undefined;options.onStatus?.('设备已断开');}});
   });
   let refreshing = Promise.resolve();
   const changed = (file: string) => {
@@ -115,7 +130,9 @@ export async function createDeviceServer(options: DeviceServerOptions) {
     async close(){
       if(closed)return;closed=true;
       for(const ws of sockets.clients)ws.terminate();
-      sockets.close(); await modules.close();
+      sockets.close();
+      for(const socket of connections)socket.destroy();
+      await modules.close();
       await new Promise<void>(done=>http.close(()=>done()));
     },
   };

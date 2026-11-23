@@ -31,6 +31,7 @@ export async function createPlugin(options:CreateOptions):Promise<string>{
     await copy(join(templates,template),staging);
     const manifest=JSON.parse(await readFile(join(staging,'plugin.json'),'utf8'));
     Object.assign(manifest,{id,name,author});
+    for(const translation of Object.values(manifest.locales??{}) as Record<string,string>[])delete translation.name;
     await writeFile(join(staging,'plugin.json'),JSON.stringify(manifest,null,2)+'\n');
     const packageJson=JSON.parse(await readFile(join(staging,'package.json'),'utf8'));packageJson.name=slug;
     if(options.distribution==='npm'){

@@ -61,6 +61,12 @@ test('实际 tgz 在仓库外安装后完成创建、检查、构建和打包',{
  }};
  await handlers.get('card.load')(ctx);await handlers.get('increment')(ctx);
  assert.deepEqual(writes,[['count',0],['count',1]]);
+ const translated=join(temp,'localized-plugin');
+ run(createBin,[translated,'--yes','--template','localized','--name','Actual name'],temp);
+ const translatedPkg=JSON.parse(await readFile(join(translated,'package.json'),'utf8'));translatedPkg.devDependencies=pkg.devDependencies;await writeFile(join(translated,'package.json'),JSON.stringify(translatedPkg));
+ run(npmCli,['install','--ignore-scripts','--no-audit','--no-fund'],translated);
+ for(const command of ['check','pack:plugin','test'])run(npmCli,['run',command],translated);
+ assert.equal(JSON.parse(await readFile(join(translated,'plugin.json'),'utf8')).name,'Actual name');
  const previous=await readFile(join(target,'dist',bundle.manifest.script),'utf8');
  await writeFile(join(target,'src/main.ts'),'const broken: number = "invalid";');
  const bad=spawnSync(process.execPath,[npmCli,'run','build'],{cwd:target,encoding:'utf8',windowsHide:true});

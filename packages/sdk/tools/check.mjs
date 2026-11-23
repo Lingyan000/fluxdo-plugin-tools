@@ -6,4 +6,5 @@ const types=(await readFile(new URL('../types/global.d.ts',import.meta.url),'utf
 assert.equal(createHash('sha256').update(types).digest('hex'),contract.typesSha256,'SDK 类型与契约摘要不同步');
 const schema=JSON.parse(await readFile(new URL('../schema/plugin.schema.json',import.meta.url),'utf8'));
 assert.deepEqual(schema.properties.requiredFeatures.items.enum,contract.features);
+assert.deepEqual([.../type Feature\s*=([^;]+);/.exec(types)[1].matchAll(/'([^']+)'/g)].map(m=>m[1]).sort(),[...contract.features].sort(),'Feature 类型须同步');
 console.log('SDK 契约与声明校验通过');

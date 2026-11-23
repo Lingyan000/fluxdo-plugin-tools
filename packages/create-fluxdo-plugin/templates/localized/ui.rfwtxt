@@ -1,0 +1,2 @@
+import fluxdo;
+widget Card = Column(crossAxisAlignment: "stretch", children: [Label(text: data.title, style: "titleLarge"), Gap(), Button(label: data.action, onPressed: event "increment" {})]);

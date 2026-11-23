@@ -4,10 +4,10 @@ FluxDO 原生插件的 CLI、项目脚手架和 TypeScript SDK。插件作者只
 
 ## 创建插件
 
-0.12.0 通过 GitHub Release 分发三个独立 npm 格式包，尚未发布到 npm registry。
+0.13.0 通过 GitHub Release 分发三个独立 npm 格式包，尚未发布到 npm registry。
 
 ~~~sh
-npx --yes --package=https://github.com/Lingyan000/fluxdo-plugin-tools/releases/download/v0.12.0/create-fluxdo-plugin-0.12.0.tgz create-fluxdo-plugin my-plugin --id com.example.myplugin
+npx --yes --package=https://github.com/Lingyan000/fluxdo-plugin-tools/releases/download/v0.13.0/create-fluxdo-plugin-0.13.0.tgz create-fluxdo-plugin my-plugin --id com.example.myplugin
 cd my-plugin
 npm install
 npm run check
@@ -84,7 +84,7 @@ pnpm test 会把三个包制成实际 tgz，在仓库外安装脚手架和依赖
 
 ## 数据迁移、偏好与发行
 
-SDK 0.12.0 提供 host.environment、preferences.get 与 storage.migrate 类型，以及 [数据迁移与偏好示例](examples/data-migration/)。清单声明 dataVersion 和 pluginPreferences，迁移按账号在副本上执行，成功后才切换，不能联网或操作凭证。
+SDK 0.13.0 提供 host.environment、preferences.get 与 storage.migrate 类型，以及 [数据迁移与偏好示例](examples/data-migration/)。清单声明 dataVersion 和 pluginPreferences，迁移按账号在副本上执行，成功后才切换，不能联网或操作凭证。
 
 测试工具导出 createScenario，可以控制离线、账号、权限和凭证过期；createPluginHarness({virtualTimers:true}) 的 advance 推进虚拟时间。模拟场景只验证业务，不代替真实宿主隔离与系统调度。
 
@@ -106,4 +106,12 @@ pack 与 market-entry 接受 --key private.pem，轮换时另提供 --previous-k
 
 所有包具备公开发布配置，`npm.yml` 手动工作流发布经过摘要验证的 GitHub Release 产物。首次发布需要 npm 组织及包名称权限；配置 npm Trusted Publisher 或环境 `npm` 的 `NPM_TOKEN` 后运行。没有完成 npm 发布时继续使用 Release 安装命令。
 
-发布成功后可使用 `npm create fluxdo-plugin@0.12.0 -- my-plugin --distribution npm`，将脚手架依赖指向 npm。默认仍使用 GitHub Release，便于在 npm 尚未配置时使用。npm 发布的版本不可覆盖。
+发布成功后可使用 `npm create fluxdo-plugin@0.13.0 -- my-plugin --distribution npm`，将脚手架依赖指向 npm。默认仍使用 GitHub Release，便于在 npm 尚未配置时使用。npm 发布的版本不可覆盖。
+
+## 本地化和配对诊断
+
+创建时选择 `--template localized`，即可使用 SDK 的 `createTranslator` 配合宿主语言事件更新原生组件。该模板保留 Vite 热替换；服务器返回的用户内容不参与翻译。独立旧脚本可配置 `localization: {baseLocale,script,ui}`，运行 `fluxdo localize` 或 `fluxdo localize --check` 生成、校验 JS/RFW/清单译文；有模块导入的 TypeScript 使用 SDK 翻译函数。
+
+设备连上开发会话后，运行 `fluxdo doctor --pair '<配对地址>'` 查看连接、能力、权限、可见界面尺寸、字段类型、列表数量及 API 调用耗时。不会替换设备连接或读取正文、文件、存储值和凭证。配对地址是临时凭证，请勿写入仓库或公开日志。
+
+SDK 0.13.0 增加临时附件、上传进度与取消、私密图片预览、hCaptcha 原生面板和清单翻译。附件不返回本地路径或文件字节，业务网络仍由宿主按权限执行。具体参数及平台边界见应用的 [API 文档](https://github.com/Lingyan000/fluxdo/blob/codex/ld-store-native-checkout/docs/plugins/api.md)。

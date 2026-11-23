@@ -1,0 +1,26 @@
+{
+  "schema": 10,
+  "apiVersion": 2,
+  "id": "example.typescript.counter",
+  "name": "本地化示例",
+  "version": "1.0.0",
+  "author": "插件开发示例",
+  "ui": "ui.rfwtxt",
+  "script": "main.js",
+  "permissions": {
+    "network": []
+  },
+  "card": {
+    "widget": "Card"
+  },
+  "requiredFeatures": [
+    "confirmationDialog",
+    "hostEnvironment",
+    "manifestLocalization"
+  ],
+  "locales": {
+    "en": {
+      "name": "Localized demo"
+    }
+  }
+}

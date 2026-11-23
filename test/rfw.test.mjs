@@ -25,7 +25,7 @@ test('RFW 参数契约覆盖士多和动态订阅的实际界面',async()=>{
  if(!root)return;
  const ui=await readFile(root+'/test/fixtures/metaverse/ld-store/ui.rfwtxt','utf8');
  assert.ok(validateUi(ui).length>0);
- const activity=JSON.parse(await readFile(root+'/test/fixtures/metaverse/activity-feed-1.3.0.fluxplugin','utf8'));
+ const activity=JSON.parse(await readFile(root+'/test/fixtures/metaverse/activity-feed-1.3.1.fluxplugin','utf8'));
  assert.ok(validateUi(activity.files[activity.manifest.ui]).includes('Following'));
 });
 
