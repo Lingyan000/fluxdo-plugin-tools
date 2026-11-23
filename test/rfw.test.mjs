@@ -25,7 +25,7 @@ test('RFW 参数契约覆盖士多和动态订阅的实际界面',async()=>{
  if(!root)return;
  const ui=await readFile(root+'/test/fixtures/metaverse/ld-store/ui.rfwtxt','utf8');
  assert.ok(validateUi(ui).length>0);
- const activity=JSON.parse(await readFile(root+'/test/fixtures/metaverse/activity-feed-1.2.0.fluxplugin','utf8'));
+ const activity=JSON.parse(await readFile(root+'/test/fixtures/metaverse/activity-feed-1.3.0.fluxplugin','utf8'));
  assert.ok(validateUi(activity.files[activity.manifest.ui]).includes('Following'));
 });
 
@@ -35,6 +35,7 @@ test('旧发行包建立的订阅、未读和缓存可由新发行包直接使�
   const surface = {surface: 'feed', kind: 'page', page: 'feed', params: {}};
   let day = 1, allowed = true, reads = 0;
   const mocks = {
+    'host.environment': () => ({locale: 'zh', platform: 'test'}),
     'permissions.status': () => ({forumProfiles: true, forumActivity: allowed}),
     'tasks.list': () => [], 'notifications.isAllowed': () => false, 'navigation.setBadge': () => null,
     'forum.read': ({resource, username}) => {
@@ -60,7 +61,7 @@ test('旧发行包建立的订阅、未读和缓存可由新发行包直接使�
   await old.dispatch('page.resume', {}, surface);
   assert.equal(old.data.feed.title, '1 位订阅 · 1 条未读');
   allowed = false;
-  const next = await start('1.2.0', old.storage);
+  const next = await start('1.3.0', old.storage);
   const before = reads;
   await next.dispatch('page.open', {}, surface);
   assert.equal(reads, before);
