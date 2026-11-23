@@ -37,7 +37,7 @@ jobs:
         with:
           repository: ${{ steps.host.outputs.repository }}
           # contract.hostReference.commit 记录最早兼容宿主。联调使用包含最新回归用例的提交。
-          ref: af232413a0e331c5b981305e648c4f24a4c1ec02
+          ref: 4011bd60360de2ed25936d6c667bb71378854bf1
           path: app
           submodules: recursive
           persist-credentials: false
