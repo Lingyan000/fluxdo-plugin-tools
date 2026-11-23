@@ -1,0 +1,64 @@
+name: Plugin release
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Release tag
+        required: true
+      channel:
+        type: choice
+        options: [stable, preview]
+        default: stable
+permissions:
+  contents: write
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: npm install --ignore-scripts --no-audit --no-fund
+      - run: npm run check && npm test
+      - name: Build package and market entry
+        env:
+          SIGNING_KEY: ${{ secrets.PLUGIN_SIGNING_KEY }}
+          PREVIOUS_KEY: ${{ secrets.PLUGIN_PREVIOUS_SIGNING_KEY }}
+          CHANNEL: ${{ inputs.channel }}
+          TAG: ${{ inputs.tag }}
+          REPOSITORY: ${{ github.repository }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          umask 077
+          trap 'rm -f "$RUNNER_TEMP/plugin-key.pem" "$RUNNER_TEMP/plugin-previous.pem"' EXIT
+          args=()
+          if [ -n "$SIGNING_KEY" ]; then
+            printf '%s' "$SIGNING_KEY" > "$RUNNER_TEMP/plugin-key.pem"
+            args+=(--key "$RUNNER_TEMP/plugin-key.pem")
+          fi
+          if [ -n "$PREVIOUS_KEY" ]; then
+            printf '%s' "$PREVIOUS_KEY" > "$RUNNER_TEMP/plugin-previous.pem"
+            args+=(--previous-key "$RUNNER_TEMP/plugin-previous.pem")
+          fi
+          npx --no-install fluxdo market-entry --repository "https://github.com/$REPOSITORY" --tag "$TAG" --channel "$CHANNEL" "${args[@]}"
+          sha256sum dist/*.fluxplugin > dist/SHA256SUMS.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: plugin-package
+          path: |
+            dist/*.fluxplugin
+            dist/market-entry.json
+            dist/SHA256SUMS.txt
+      - name: Create draft release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.tag }}
+          CHANNEL: ${{ inputs.channel }}
+        run: |
+          args=()
+          if [ "$CHANNEL" = preview ]; then args+=(--prerelease); fi
+          gh release create "$TAG" --draft --target "$GITHUB_SHA" --title "$TAG" --generate-notes "${args[@]}" dist/*.fluxplugin dist/SHA256SUMS.txt

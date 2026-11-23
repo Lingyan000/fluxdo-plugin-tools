@@ -35,6 +35,7 @@ test('实际 tgz 在仓库外安装后完成创建、检查、构建和打包',{
  const createBin=join(temp,'node_modules/create-fluxdo-plugin/dist/bin.mjs');
  const target=join(temp,'my-plugin');
  run(createBin,[target,'--yes','--id','com.example.generated'],temp);
+ assert.equal(await readFile(join(target,'.github/workflows/plugin-release.yml'),'utf8'),await readFile(join(root,'packages/create-fluxdo-plugin/templates/basic/.github/workflows/plugin-release.yml'),'utf8'));
  const pkgPath=join(target,'package.json');const pkg=JSON.parse(await readFile(pkgPath,'utf8'));
  // 发行前验证同一批真实包，GitHub URL 在发布后的验证中使用。
  pkg.devDependencies['@fluxdo/plugin-cli']='file:'+join(root,'artifacts/fluxdo-plugin-cli-'+version+'.tgz').replaceAll('\\','/');
@@ -63,6 +64,7 @@ test('实际 tgz 在仓库外安装后完成创建、检查、构建和打包',{
  assert.deepEqual(writes,[['count',0],['count',1]]);
  const translated=join(temp,'localized-plugin');
  run(createBin,[translated,'--yes','--template','localized','--name','Actual name'],temp);
+ assert.equal(await readFile(join(translated,'.github/workflows/plugin-release.yml'),'utf8'),await readFile(join(root,'packages/create-fluxdo-plugin/templates/localized/.github/workflows/plugin-release.yml'),'utf8'));
  const translatedPkg=JSON.parse(await readFile(join(translated,'package.json'),'utf8'));translatedPkg.devDependencies=pkg.devDependencies;await writeFile(join(translated,'package.json'),JSON.stringify(translatedPkg));
  run(npmCli,['install','--ignore-scripts','--no-audit','--no-fund'],translated);
  for(const command of ['check','pack:plugin','test'])run(npmCli,['run',command],translated);

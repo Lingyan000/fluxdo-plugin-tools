@@ -4,10 +4,10 @@ FluxDO 原生插件的 CLI、项目脚手架和 TypeScript SDK。插件作者只
 
 ## 创建插件
 
-0.13.0 通过 GitHub Release 分发三个独立 npm 格式包，尚未发布到 npm registry。
+0.13.1 通过 GitHub Release 分发三个独立 npm 格式包，尚未发布到 npm registry。
 
 ~~~sh
-npx --yes --package=https://github.com/Lingyan000/fluxdo-plugin-tools/releases/download/v0.13.0/create-fluxdo-plugin-0.13.0.tgz create-fluxdo-plugin my-plugin --id com.example.myplugin
+npx --yes --package=https://github.com/Lingyan000/fluxdo-plugin-tools/releases/download/v0.13.1/create-fluxdo-plugin-0.13.1.tgz create-fluxdo-plugin my-plugin --id com.example.myplugin
 cd my-plugin
 npm install
 npm run check
@@ -106,7 +106,7 @@ pack 与 market-entry 接受 --key private.pem，轮换时另提供 --previous-k
 
 所有包具备公开发布配置，`npm.yml` 手动工作流发布经过摘要验证的 GitHub Release 产物。首次发布需要 npm 组织及包名称权限；配置 npm Trusted Publisher 或环境 `npm` 的 `NPM_TOKEN` 后运行。没有完成 npm 发布时继续使用 Release 安装命令。
 
-发布成功后可使用 `npm create fluxdo-plugin@0.13.0 -- my-plugin --distribution npm`，将脚手架依赖指向 npm。默认仍使用 GitHub Release，便于在 npm 尚未配置时使用。npm 发布的版本不可覆盖。
+发布成功后可使用 `npm create fluxdo-plugin@0.13.1 -- my-plugin --distribution npm`，将脚手架依赖指向 npm。默认仍使用 GitHub Release，便于在 npm 尚未配置时使用。npm 发布的版本不可覆盖。
 
 ## 本地化和配对诊断
 
