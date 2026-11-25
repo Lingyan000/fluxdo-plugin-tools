@@ -57,6 +57,9 @@ export async function localizeProject(directory,{check=false}={}){
   const catalogs=Object.fromEntries(Object.entries(conversions).map(([locale,convert])=>[locale,Object.fromEntries(strings.map(text=>[keys.get(text),convert(text)]))]));
   manifest.locales=Object.fromEntries(Object.entries(conversions).filter(([locale])=>locale!==baseLocale).map(([locale,convert])=>[locale,Object.fromEntries(Object.entries(fields).filter(([,text])=>text).map(([field,text])=>[field,convert(text)]))]));
   if(!manifest.requiredFeatures.includes('manifestLocalization'))manifest.requiredFeatures.push('manifestLocalization');
+  const helpers=config.runtimeHelpers??[];
+  if(!Array.isArray(helpers)||helpers.some(name=>name!=='data')||new Set(helpers).size!==helpers.length)throw Error('runtimeHelpers 只支持 data');
+  const helperCode=helpers.includes('data')?'const fluxdoData=(()=>{'+readFileSync(new URL('./data.mjs',import.meta.url),'utf8').replace(/^export /gm,'')+'\nreturn {createQueryClient,createPagedList,QueryCancelledError};})();\n':'';
   const runtime=`// 此文件由 fluxdo localize 生成，业务源码与翻译见 src/、locales/。
 ((host)=>{
  const catalogs=${JSON.stringify(catalogs)},titles=${JSON.stringify(titles)};
@@ -70,7 +73,7 @@ export async function localizeProject(directory,{check=false}={}){
  function client(api){return {...api,toast:(...args)=>api.toast(...args.map(translate)),dialogs:api.dialogs&&{...api.dialogs,confirm:options=>api.dialogs.confirm(translate(options))},notifications:api.notifications&&{...api.notifications,show:options=>api.notifications.show(translate(options))}};}
  function wrap(ctx){if(typeof ctx.setData!=='function')return {...ctx,api:client(ctx.api)};contexts.set(ctx.surface,ctx);const data=records.get(ctx.surface)||new Map();records.set(ctx.surface,data);ctx.setData('i18n',catalogs[locale]);ctx.setData('pageTitle',data.has('pageTitle')?translate(data.get('pageTitle')):catalogs[locale][titles[ctx.page]]||'');return {...ctx,api:client(ctx.api),setData:(key,value)=>{data.set(key,value);ctx.setData(key,translate(value));}};}
  const fluxdo={...client(host),on:(name,fn)=>host.on(name,async(ctx,args)=>{try{if(ctx.api.host?.environment)await (localeTask??=environment(ctx.api).catch(()=>{}));if(name==='page.resume'||name==='card.resume'){await environment(ctx.api);const source=contexts.get(ctx.surface);if(source)for(const [key,value]of records.get(ctx.surface)||[])source.setData(key,translate(value));}return await fn(wrap(ctx),args);}finally{if(name==='surface.close'){contexts.delete(ctx.surface);records.delete(ctx.surface);}}})};
- ${code}
+ ${helperCode}${code}
  host.on('host.environmentChanged',async ctx=>{await environment(ctx.api);for(const [id,source]of contexts){source.setData('i18n',catalogs[locale]);source.setData('pageTitle',catalogs[locale][titles[source.page]]||'');for(const [key,value]of records.get(id)||[])source.setData(key,translate(value));}});
 })(fluxdo);
 `;

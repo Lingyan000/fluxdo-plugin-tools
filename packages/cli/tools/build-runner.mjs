@@ -12,6 +12,7 @@ await build({
 });
 
 const {copyFile}=await import('node:fs/promises');
+await copyFile(new URL('../../sdk/data/index.mjs',import.meta.url),new URL('../localization/data.mjs',import.meta.url));
 await copyFile(new URL('../../sdk/contract.json',import.meta.url),new URL('../dist/contract.json',import.meta.url));
 await copyFile(new URL('../../sdk/schema/plugin.schema.json',import.meta.url),new URL('../dist/plugin.schema.json',import.meta.url));
 

@@ -1,5 +1,5 @@
 {
-  "schema": 10,
+  "schema": 12,
   "apiVersion": 2,
   "id": "example.typescript.counter",
   "name": "本地化示例",
@@ -16,11 +16,18 @@
   "requiredFeatures": [
     "confirmationDialog",
     "hostEnvironment",
-    "manifestLocalization"
+    "manifestLocalization",
+    "storageScopes"
   ],
   "locales": {
     "en": {
       "name": "Localized demo"
     }
+  },
+  "storage": {
+    "default": "shared",
+    "scopes": [
+      "shared"
+    ]
   }
 }

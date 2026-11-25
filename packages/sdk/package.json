@@ -1,5 +1,5 @@
 {
-  "version": "0.14.0",
+  "version": "0.15.0",
   "type": "module",
   "license": "GPL-3.0-only",
   "engines": {
@@ -19,7 +19,8 @@
     "README.md",
     "LICENSE",
     "testing",
-    "i18n"
+    "i18n",
+    "data"
   ],
   "exports": {
     ".": {
@@ -38,6 +39,10 @@
     "./i18n": {
       "types": "./i18n/index.d.mts",
       "import": "./i18n/index.mjs"
+    },
+    "./data": {
+      "types": "./data/index.d.mts",
+      "import": "./data/index.mjs"
     }
   },
   "scripts": {

@@ -1,5 +1,5 @@
 {
-  "version": "0.14.0",
+  "version": "0.15.0",
   "type": "module",
   "license": "GPL-3.0-only",
   "engines": {
@@ -39,6 +39,10 @@
     "./localization": {
       "types": "./localization/compiler.d.mts",
       "import": "./localization/compiler.mjs"
+    },
+    "./signing": {
+      "types": "./dist/signing.d.mts",
+      "import": "./dist/signing.mjs"
     }
   },
   "dependencies": {

@@ -22,7 +22,7 @@ const contract=JSON.parse(await readFile(new URL('./contract.json',import.meta.u
 const schema=JSON.parse(await readFile(new URL('./plugin.schema.json',import.meta.url),'utf8'));
 const validate=new Ajv({allErrors:true,strict:false}).compile(schema);
 export interface Manifest {
-  schema:number;apiVersion:number;id:string;name:string;version:string;author:string;
+  storage?:{default:'shared'|'account';scopes:('shared'|'account')[]};schema:number;apiVersion:number;id:string;name:string;version:string;author:string;
   ui:string;script:string;requiredFeatures?:string[];tasks?:{id:string;title:string}[];dataVersion?:number;preferences?:{key:string;type:string;default?:unknown;options?:Record<string,string>}[];
   permissions:{network:string[];identity?:boolean;background?:boolean;notifications?:boolean;forum?:('profiles'|'activity'|'following')[];connect?:string[];credentials?:Record<string,{requests:{origin:string}[]}>};
   card?:{widget:string;page?:string};pages?:{id:string;widget:string;appBar?:{title?:string;actions?:string};presentation?:string;navigation?:{label:string;icon?:string}}[];links?:{page:string}[];
@@ -63,7 +63,8 @@ export function checkManifest(raw:unknown):asserts raw is Manifest {
     for(const field of m.preferences??[]){limits['preferences.'+field.key+'.title']=80;for(const key of Object.keys(field.options??{}))limits['preferences.'+field.key+'.options.'+key]=80;}
     for(const locale of Object.values((m as any).locales))for(const [key,text]of Object.entries(locale as Record<string,string>))if(!limits[key]||!text.trim()||text.length>limits[key]!||/[\x00-\x1f\x7f]/.test(text))fail('清单翻译字段无效或过长');
   }
-  if(m.requiredFeatures?.includes('accountDataMigration')&&(!m.permissions.identity||(!m.permissions.forum?.length&&!m.tasks?.length&&!m.permissions.notifications&&!m.requiredFeatures?.includes('navigationBadge'))))fail('账号数据迁移需要 identity 和账号分区能力');
+  if(m.storage && (m.schema<12 || !m.requiredFeatures?.includes('storageScopes') || !m.storage.scopes.includes(m.storage.default) || (m.storage.scopes.includes('account') && !m.permissions.identity)))fail('存储作用域须声明 storageScopes，账号分区须声明 identity');
+  if(m.requiredFeatures?.includes('accountDataMigration')&&(!m.permissions.identity||(m.storage ? !m.storage.scopes.includes('account') : (!m.permissions.forum?.length&&!m.tasks?.length&&!m.permissions.notifications&&!m.requiredFeatures?.includes('navigationBadge')))))fail('账号数据迁移需要 identity 和账号分区能力');
   if(m.permissions.forum && m.schema<11)fail('论坛读取权限需要 schema 11');
   if(m.permissions.forum?.length&&!m.requiredFeatures?.includes('forumRead'))fail('论坛读取须声明 forumRead');
   if(m.pages?.some(p=>p.navigation)&&!m.requiredFeatures?.includes('navigationEntries'))fail('导航入口须声明 navigationEntries');
@@ -73,6 +74,7 @@ export function checkManifest(raw:unknown):asserts raw is Manifest {
   if(m.permissions.notifications&&!m.requiredFeatures?.includes('localNotifications'))fail('通知须声明 localNotifications');
   if(m.requiredFeatures?.includes('navigationBadge')&&!m.pages?.some(p=>p.navigation))fail('角标需要导航页面');
   if(m.tasks?.some(t=>!t.title.trim())||new Set(m.tasks?.map(t=>t.id)).size!==(m.tasks?.length??0))fail('任务标题为空或 ID 重复');
+  if((m.pages?.length??0)>16&&!m.requiredFeatures?.includes('extendedPages'))fail('超过 16 个页面须声明 extendedPages');
   const ids=new Set<string>();
   for(const page of m.pages??[]){if(ids.has(page.id))fail('页面 ID 重复');ids.add(page.id);if(page.navigation&&(m.schema<11||page.presentation==='modal'))fail('导航入口需要 schema 11 的普通页面');}
   if(m.pages?.some(p=>p.appBar)&&!m.requiredFeatures?.includes('pageChrome'))fail('标题栏插槽须声明 pageChrome');

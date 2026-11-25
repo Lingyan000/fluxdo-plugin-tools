@@ -39,10 +39,10 @@ test('模板资源不接受指向项目之外的目录链接',async t=>{
 
 test('卡片默认页需要能力声明且只能引用普通页面',async()=>{
  const base=JSON.parse(await readFile(join(root,'packages/create-fluxdo-plugin/templates/basic/plugin.json'),'utf8'));
- const valid={...base,requiredFeatures:['cardNavigation'],card:{widget:'Card',page:'home'},pages:[{id:'home',widget:'Home',title:'首页'}]};
+ const valid={...base,requiredFeatures:['storageScopes','cardNavigation'],card:{widget:'Card',page:'home'},pages:[{id:'home',widget:'Home',title:'首页'}]};
  checkManifest(valid);
  for(const change of [{requiredFeatures:[]},{card:{widget:'Card',page:'missing'}},{card:{widget:'Card',page:''}},{pages:[{id:'home',widget:'Home',presentation:'modal',title:'弹层'}]}])assert.throws(()=>checkManifest({...valid,...change}));
- checkManifest({...valid,card:{widget:'Card'},requiredFeatures:[]});
+ checkManifest({...valid,card:{widget:'Card'},requiredFeatures:['storageScopes']});
 });
 
 test('npm 分发模板固定同版依赖，默认 GitHub 分发仍可用',async t=>{

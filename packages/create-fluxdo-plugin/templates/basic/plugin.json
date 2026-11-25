@@ -1,5 +1,5 @@
 {
-  "schema": 10,
+  "schema": 12,
   "apiVersion": 2,
   "id": "example.typescript.counter",
   "name": "计数示例",
@@ -14,6 +14,13 @@
     "widget": "Card"
   },
   "requiredFeatures": [
-    "confirmationDialog"
-  ]
+    "confirmationDialog",
+    "storageScopes"
+  ],
+  "storage": {
+    "default": "shared",
+    "scopes": [
+      "shared"
+    ]
+  }
 }

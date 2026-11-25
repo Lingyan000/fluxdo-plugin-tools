@@ -4,7 +4,7 @@ import {isDeepStrictEqual} from 'node:util';
 import {readFileSync} from 'node:fs';
 const prelude=readFileSync(new URL('./prelude.js',import.meta.url),'utf8');
 /** 插件作者的受控测试宿主。所有外部 API 必须显式模拟；不连接真实账号。 */
-export function createPluginHarness({script,mocks={},initialStorage={},virtualTimers=false}){
+export function createPluginHarness({script,mocks={},initialStorage={},storageScope='shared',accountId=null,virtualTimers=false}){
   const calls=[],logs=[],data={},storage=structuredClone(initialStorage),timers=new Map();
   let taskResult;
   let closed=false,idleWaiters=[],pending=0,clock=0;
@@ -26,12 +26,19 @@ export function createPluginHarness({script,mocks={},initialStorage={},virtualTi
     calls.push(structuredClone(m));pending++;
     const run=async()=>{
       const fn=mocks[m.m];if(fn)return fn(m.p??{});
+      const scope=m.p?.scope??storageScope;
+      const storageKey=key=>{
+        if(!['shared','account'].includes(scope))throw Error('storage_scope_not_declared');
+        if(scope==='account'&&accountId===null)throw Error('forum_auth_required');
+        return scope==='account'?'@forum-account:'+accountId+':'+key:key;
+      };
+      const key=m.p?.key==null?null:storageKey(m.p.key);
       switch(m.m){
-        case 'storage.get':return storage[m.p.key]??null;
-        case 'storage.compareAndSet':if(!isDeepStrictEqual(storage[m.p.key]??null,m.p.expected))return false;if(m.p.value===null)delete storage[m.p.key];else storage[m.p.key]=structuredClone(m.p.value);return true;
-        case 'storage.set':storage[m.p.key]=structuredClone(m.p.value);return null;
-        case 'storage.remove':delete storage[m.p.key];return null;
-        case 'storage.setMany':for(const [key,value]of Object.entries(m.p.entries)){if(value===null)delete storage[key];else storage[key]=structuredClone(value);}return null;
+        case 'storage.get':return storage[key]??null;
+        case 'storage.compareAndSet':if(!isDeepStrictEqual(storage[key]??null,m.p.expected))return false;if(m.p.value===null)delete storage[key];else storage[key]=structuredClone(m.p.value);return true;
+        case 'storage.set':storage[key]=structuredClone(m.p.value);return null;
+        case 'storage.remove':delete storage[key];return null;
+        case 'storage.setMany':for(const [name,value]of Object.entries(m.p.entries)){const key=storageKey(name);if(value===null)delete storage[key];else storage[key]=structuredClone(value);}return null;
         default:throw new Error('未提供 API 模拟：'+m.m);
       }
     };
