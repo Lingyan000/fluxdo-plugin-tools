@@ -15,7 +15,9 @@ async function project(t){
   await writeFile(join(root,'ui.rfwtxt'),'import fluxdo; widget Card = Label(text: "first");');
   await writeFile(join(root,'plugin.json'),JSON.stringify(manifest));
   await writeFile(join(root,'package.json'),'{"type":"module"}');
-  t.after(()=>rm(root,{recursive:true,force:true}));return {root,manifest};
+  const cleanups=[];
+  t.after(async()=>{try{for(const close of cleanups.reverse())await close();}finally{await rm(root,{recursive:true,force:true,maxRetries:6,retryDelay:250});}});
+  return {root,manifest,cleanup:fn=>cleanups.push(fn)};
 }
 function connect(server,token,origin){
   const url=new URL(server.url);
@@ -24,11 +26,11 @@ function connect(server,token,origin){
   socket.on('message',raw=>{const message=JSON.parse(raw);messages.push(message);for(const waiter of [...waiters])if(waiter.test(message)){waiters.splice(waiters.indexOf(waiter),1);clearTimeout(waiter.timer);waiter.resolve(message);}});
   return {socket,messages,wait(test){const found=messages.find(test);if(found)return Promise.resolve(found);return new Promise((resolve,reject)=>{const w={test,resolve,timer:setTimeout(()=>reject(new Error('packet timeout')),10000)};waiters.push(w);});}};
 }
-test('设备配对拒绝错误令牌和浏览器来源，重连替换旧连接，RFW 原子更新',async t=>{
-  const {root,manifest}=await project(t);
+test('设备配对拒绝错误令牌和浏览器来源，重连替换旧连接，RFW 原子更新',{timeout:20000},async t=>{
+  const {root,manifest,cleanup}=await project(t);
   const logs=[];
   const server=await createDeviceServer({root,port:0,onLog:e=>logs.push(e)});
-  t.after(()=>server.close());
+  cleanup(()=>server.close());
   for(const [token,origin] of [['invalid',undefined],[undefined,'http://evil.example']]){
     const {socket}=connect(server,token,origin);
     const [error]=await once(socket,'error');assert.match(error.message,/401/);
@@ -52,13 +54,13 @@ test('设备配对拒绝错误令牌和浏览器来源，重连替换旧连接�
   assert.equal((await invalid)[0],1008);assert.equal(logs.length,1);
 });
 
-test('无线配对使用独立证书，错误证书或明文连接均被拒绝',async t=>{
-  const {root}=await project(t);const server=await createDeviceServer({root,port:0,lanHost:'127.0.0.1'});t.after(()=>server.close());
+test('无线配对使用独立证书，错误证书或明文连接均被拒绝',{timeout:20000},async t=>{
+  const {root,cleanup}=await project(t);const server=await createDeviceServer({root,port:0,lanHost:'127.0.0.1'});cleanup(()=>server.close());
   const url=new URL(server.url);assert.match(url.searchParams.get('cert'),/^[a-f0-9]{64}$/);
   const bad=new WebSocket('wss://127.0.0.1:'+server.port+'/fluxdo');const [error]=await once(bad,'error');assert.match(error.message,/self-signed|certificate/i);
   const ws=new WebSocket('wss://127.0.0.1:'+server.port+'/fluxdo',{rejectUnauthorized:false,headers:{Authorization:'Bearer '+url.searchParams.get('key')}});
   const message=once(ws,'message');await once(ws,'open');
   assert.equal(ws._socket.getPeerCertificate().fingerprint256.replaceAll(':','').toLowerCase(),url.searchParams.get('cert'));
-  assert.equal(JSON.parse(String((await message)[0])).type,'project');ws.close();
+  assert.equal(JSON.parse(String((await message)[0])).type,'project');const disconnected=once(ws,'close');ws.close();await disconnected;
   await assert.rejects(createDeviceServer({root,lanHost:'8.8.8.8'}),/本机局域网/);
 });
