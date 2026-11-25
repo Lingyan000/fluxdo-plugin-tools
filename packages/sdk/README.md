@@ -62,3 +62,5 @@ queries.dispose();
 readPage 是插件自己的读取函数，须返回 {items, nextCursor}，末页返回 nextCursor: null。相同游标自动终止，列表按 itemKey 去重；刷新失败保留旧行，reset 在账号或筛选变化时清空行。查询结果只支持 JSON 数据，超出缓存预算会报 query_cache_limit。状态中的 error 为错误文字，loading 和 loadingMore 可驱动原生骨架与页脚。
 
 取消是逻辑取消：旧响应不会写回数据，但已经发出的底层请求不保证物理中断。QueryCancelledError 通常在切换账号或离页时发生，应由业务忽略或转为中性状态。缓存不会持久化，也不会自动重试写操作；持久化仍使用受控 storage API。
+
+0.16.0 增加 timelinePages 和 inputOptions。TimelinePage 以稳定条目 ID 维护历史阅读位置、最新定位和懒加载；TextInput 支持公共圆角外壳、多行增长、长度限制与发送只读状态。组件参数由宿主注册表生成，并在应用开发中心提供交互预览。

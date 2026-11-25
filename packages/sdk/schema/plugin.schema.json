@@ -405,7 +405,9 @@
           "manifestLocalization",
           "accountDataMigration",
           "storageScopes",
-          "extendedPages"
+          "extendedPages",
+          "timelinePages",
+          "inputOptions"
         ]
       },
       "uniqueItems": true

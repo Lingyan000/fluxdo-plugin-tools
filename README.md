@@ -4,10 +4,10 @@ FluxDO 原生插件的 CLI、项目脚手架和 TypeScript SDK。插件作者只
 
 ## 创建插件
 
-0.15.0 通过 GitHub Release 分发三个独立 npm 格式包，尚未发布到 npm registry。
+0.16.0 通过 GitHub Release 分发三个独立 npm 格式包，尚未发布到 npm registry。
 
 ~~~sh
-npx --yes --package=https://github.com/Lingyan000/fluxdo-plugin-tools/releases/download/v0.15.0/create-fluxdo-plugin-0.15.0.tgz create-fluxdo-plugin my-plugin --id com.example.myplugin
+npx --yes --package=https://github.com/Lingyan000/fluxdo-plugin-tools/releases/download/v0.16.0/create-fluxdo-plugin-0.16.0.tgz create-fluxdo-plugin my-plugin --id com.example.myplugin
 cd my-plugin
 npm install
 npm run check
@@ -106,7 +106,7 @@ pack 与 market-entry 接受 --key private.pem，轮换时另提供 --previous-k
 
 所有包具备公开发布配置，`npm.yml` 手动工作流发布经过摘要验证的 GitHub Release 产物。首次发布需要 npm 组织及包名称权限；配置 npm Trusted Publisher 或环境 `npm` 的 `NPM_TOKEN` 后运行。没有完成 npm 发布时继续使用 Release 安装命令。
 
-发布成功后可使用 `npm create fluxdo-plugin@0.15.0 -- my-plugin --distribution npm`，将脚手架依赖指向 npm。默认仍使用 GitHub Release，便于在 npm 尚未配置时使用。npm 发布的版本不可覆盖。
+发布成功后可使用 `npm create fluxdo-plugin@0.16.0 -- my-plugin --distribution npm`，将脚手架依赖指向 npm。默认仍使用 GitHub Release，便于在 npm 尚未配置时使用。npm 发布的版本不可覆盖。
 
 ## 本地化和配对诊断
 
@@ -120,7 +120,7 @@ SDK 0.13.0 增加临时附件、上传进度与取消、私密图片预览、hCa
 
 ## 显式存储和读取状态
 
-0.15.0 的新模板声明 storageScopes，用 storage.default 选择默认范围，storage.scopes 列出 shared 或 account。账号范围必须声明并获得 identity 权限；通知和后台任务不再决定新插件的存储分区。API 尾部可传 {scope: 'shared'}，例如 ctx.api.storage.get('categories', {scope: 'shared'})。旧清单继续按原规则读取，升级前应阅读宿主数据迁移契约，不能把未归属的私有数据直接当作共享缓存。
+0.16.0 的新模板声明 storageScopes，用 storage.default 选择默认范围，storage.scopes 列出 shared 或 account。账号范围必须声明并获得 identity 权限；通知和后台任务不再决定新插件的存储分区。API 尾部可传 {scope: 'shared'}，例如 ctx.api.storage.get('categories', {scope: 'shared'})。旧清单继续按原规则读取，升级前应阅读宿主数据迁移契约，不能把未归属的私有数据直接当作共享缓存。
 
 SDK 的 @fluxdo/plugin-sdk/data 提供 createQueryClient 和 createPagedList：同键请求合并、有容量上限的缓存、按标签失效、局部更新、分页去重和迟到结果丢弃。调用方仍决定读取什么、缓存多久以及账号和页面生命周期；工具不自动重放下单、发送消息等写请求。类型和使用例见 [SDK 说明](packages/sdk/README.md)。
 
