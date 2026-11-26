@@ -4,10 +4,10 @@ FluxDO 原生插件的 CLI、项目脚手架和 TypeScript SDK。插件作者只
 
 ## 创建插件
 
-0.16.0 通过 GitHub Release 分发三个独立 npm 格式包，尚未发布到 npm registry。
+首发版本为 1.0.0，三个 npm 格式包在同一 GitHub Release 中分发。当前分支为发行准备，以下安装命令须在 v1.0.0 公开后使用；发行前用 pnpm test 验证本地 tgz。npm registry 尚未发布。
 
 ~~~sh
-npx --yes --package=https://github.com/Lingyan000/fluxdo-plugin-tools/releases/download/v0.16.0/create-fluxdo-plugin-0.16.0.tgz create-fluxdo-plugin my-plugin --id com.example.myplugin
+npx --yes --package=https://github.com/Lingyan000/fluxdo-plugin-tools/releases/download/v1.0.0/create-fluxdo-plugin-1.0.0.tgz create-fluxdo-plugin my-plugin --id com.example.myplugin
 cd my-plugin
 npm install
 npm run check
@@ -74,9 +74,9 @@ pnpm test 会把三个包制成实际 tgz，在仓库外安装脚手架和依赖
 
 按需授权支持、自适应集合组件和表单完成后关闭当前弹层的能力。可先调用 `ctx.api.permissions.status()`，在用户选择功能时用 `request()` 申请缺少的范围。详见[权限与返回值](https://github.com/Lingyan000/fluxdo/blob/codex/ld-store-native-checkout/docs/plugins/api.md#用户关闭权限时)。
 
-0.4.0 支持 schema 12：独立任务、用户批准的系统后台刷新、本地通知、底栏角标和跨实例条件写入。开发会话不安排系统任务。用 `createPluginHarness` 模拟 `task.run`，打包安装后验证系统唤醒与通知点击。参见[完整接口](https://github.com/Lingyan000/fluxdo/blob/codex/ld-store-native-checkout/docs/plugins/api.md#定时任务通知与角标)。
+支持 schema 12：独立任务、用户批准的系统后台刷新、本地通知、底栏角标和跨实例条件写入。开发会话不安排系统任务。用 `createPluginHarness` 模拟 `task.run`，打包安装后验证系统唤醒与通知点击。参见[完整接口](https://github.com/Lingyan000/fluxdo/blob/codex/ld-store-native-checkout/docs/plugins/api.md#定时任务通知与角标)。
 
-0.3.0 新增 schema 11 清单校验、`forum.read`/`forum.open` 类型和 [用户动态示例](examples/forum-activity/)。元宇宙首页与插件声明的页面都可由用户添加到底栏；开发会话只预览，不改正式导航。宿主需要支持 `navigationEntries` 与 `forumRead`。
+支持 schema 11 清单校验、`forum.read`/`forum.open` 类型和 [用户动态示例](examples/forum-activity/)。元宇宙首页与插件声明的页面都可由用户添加到底栏；开发会话只预览，不改正式导航。宿主需要支持 `navigationEntries` 与 `forumRead`。
 
 示例使用当前账号读取发帖和回复，点击后打开原生话题。论坛请求由可见页面或有效任务的 `ctx.api` 发起，只能使用清单批准的 `profiles`、`activity`、`following` 权限。业务名单、聚合与刷新策略由插件编写。具体协议和限流规则见 [宿主 API 文档](https://github.com/Lingyan000/fluxdo/blob/codex/ld-store-native-checkout/docs/plugins/api.md#论坛只读接口与原生导航)。
 
@@ -84,7 +84,7 @@ pnpm test 会把三个包制成实际 tgz，在仓库外安装脚手架和依赖
 
 ## 数据迁移、偏好与发行
 
-SDK 0.14.0 提供 host.environment、preferences.get 与 storage.migrate 类型，以及 [数据迁移与偏好示例](examples/data-migration/)。清单声明 dataVersion 和 pluginPreferences，迁移按账号在副本上执行，成功后才切换，不能联网或操作凭证。
+SDK 提供 host.environment、preferences.get 与 storage.migrate 类型，以及 [数据迁移与偏好示例](examples/data-migration/)。清单声明 dataVersion 和 pluginPreferences，迁移按账号在副本上执行，成功后才切换，不能联网或操作凭证。
 
 测试工具导出 createScenario，可以控制离线、账号、权限和凭证过期；createPluginHarness({virtualTimers:true}) 的 advance 推进虚拟时间。模拟场景只验证业务，不代替真实宿主隔离与系统调度。
 
@@ -106,7 +106,7 @@ pack 与 market-entry 接受 --key private.pem，轮换时另提供 --previous-k
 
 所有包具备公开发布配置，`npm.yml` 手动工作流发布经过摘要验证的 GitHub Release 产物。首次发布需要 npm 组织及包名称权限；配置 npm Trusted Publisher 或环境 `npm` 的 `NPM_TOKEN` 后运行。没有完成 npm 发布时继续使用 Release 安装命令。
 
-发布成功后可使用 `npm create fluxdo-plugin@0.16.0 -- my-plugin --distribution npm`，将脚手架依赖指向 npm。默认仍使用 GitHub Release，便于在 npm 尚未配置时使用。npm 发布的版本不可覆盖。
+发布成功后可使用 `npm create fluxdo-plugin@1.0.0 -- my-plugin --distribution npm`，将脚手架依赖指向 npm。默认仍使用 GitHub Release，便于在 npm 尚未配置时使用。npm 发布的版本不可覆盖。
 
 ## 本地化和配对诊断
 
@@ -114,13 +114,13 @@ pack 与 market-entry 接受 --key private.pem，轮换时另提供 --previous-k
 
 设备连上开发会话后，运行 `fluxdo doctor --pair '<配对地址>'` 查看连接、能力、权限、可见界面尺寸、字段类型、列表数量及 API 调用耗时。不会替换设备连接或读取正文、文件、存储值和凭证。配对地址是临时凭证，请勿写入仓库或公开日志。
 
-SDK 0.13.0 增加临时附件、上传进度与取消、私密图片预览、hCaptcha 原生面板和清单翻译。附件不返回本地路径或文件字节，业务网络仍由宿主按权限执行。具体参数及平台边界见应用的 [API 文档](https://github.com/Lingyan000/fluxdo/blob/codex/ld-store-native-checkout/docs/plugins/api.md)。
+SDK 提供临时附件、上传进度与取消、私密图片预览、hCaptcha 原生面板和清单翻译。附件不返回本地路径或文件字节，业务网络仍由宿主按权限执行。具体参数及平台边界见应用的 [API 文档](https://github.com/Lingyan000/fluxdo/blob/codex/ld-store-native-checkout/docs/plugins/api.md)。
 
 新增账号分区时，声明 `accountDataMigration` 并实现 `storage.partition`。处理器在隔离引擎接收 `{accountId, legacy, account}`，返回新的 `{legacy, account}`；仅可调用 `host.features` 与 `crypto.sha256`，无法联网或写正式存储。它须保留未知数据并拒绝冲突，成功后由宿主原子提交。普通页面无法访问其他账号的数据，迁移前需要 identity 权限。
 
 ## 显式存储和读取状态
 
-0.16.0 的新模板声明 storageScopes，用 storage.default 选择默认范围，storage.scopes 列出 shared 或 account。账号范围必须声明并获得 identity 权限；通知和后台任务不再决定新插件的存储分区。API 尾部可传 {scope: 'shared'}，例如 ctx.api.storage.get('categories', {scope: 'shared'})。旧清单继续按原规则读取，升级前应阅读宿主数据迁移契约，不能把未归属的私有数据直接当作共享缓存。
+新模板声明 storageScopes，用 storage.default 选择默认范围，storage.scopes 列出 shared 或 account。账号范围必须声明并获得 identity 权限；通知和后台任务不再决定新插件的存储分区。API 尾部可传 {scope: 'shared'}，例如 ctx.api.storage.get('categories', {scope: 'shared'})。旧清单继续按原规则读取，升级前应阅读宿主数据迁移契约，不能把未归属的私有数据直接当作共享缓存。
 
 SDK 的 @fluxdo/plugin-sdk/data 提供 createQueryClient 和 createPagedList：同键请求合并、有容量上限的缓存、按标签失效、局部更新、分页去重和迟到结果丢弃。调用方仍决定读取什么、缓存多久以及账号和页面生命周期；工具不自动重放下单、发送消息等写请求。类型和使用例见 [SDK 说明](packages/sdk/README.md)。
 

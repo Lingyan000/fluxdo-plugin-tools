@@ -11,20 +11,20 @@ contract.json 记录兼容版本、能力名称、容量和类型摘要（统一
 
 @fluxdo/plugin-sdk/components 导出从生产组件读取位置生成的参数、静态类型和嵌套字段契约。CLI 检查静态值并定位到组件、路径与行列；动态引用和不能可靠推导的类型仍由运行时校验。fluxdo.on 返回撤销函数，开发运行器也会在模块替换后自动撤销旧注册。
 
-0.6.0 新增 `cardNavigation`、`contentPresentation`。清单 `card.page` 指向普通页面时整卡可进入，卡片内按钮与菜单保持独立。展示组件含 Statistics、Amount、QuantityInput、Markdown、CopyButton，页面组件支持 toolbar，Image 支持 preview。
+支持 `cardNavigation`、`contentPresentation`。清单 `card.page` 指向普通页面时整卡可进入，卡片内按钮与菜单保持独立。展示组件含 Statistics、Amount、QuantityInput、Markdown、CopyButton，页面组件支持 toolbar，Image 支持 preview。
 
-0.7.0 增加 `eventStreams`、`ctx.api.streams.open/close`，以 `stream.event` 和 `stream.state` 接收事件和状态。流随界面隐藏暂停，连接复用现有网络与凭证权限；业务自行处理快照补查，系统通知单独申请授权。
+支持 `eventStreams`、`ctx.api.streams.open/close`，以 `stream.event` 和 `stream.state` 接收事件和状态。流随界面隐藏暂停，连接复用现有网络与凭证权限；业务自行处理快照补查，系统通知单独申请授权。
 
-0.8.0 增加 `host.environment()`、`preferences.get()`、`storage.migrate` 事件，以及 `host.environmentChanged` 和 `preferences.changed` 事件。清单声明 `dataVersion`、`preferences` 和相应必需能力；迁移在隔离存储副本中执行，不能联网或访问凭证。`createScenario` 为权限、账号、离线、凭证失效、宿主环境和偏好提供显式测试替身，虚拟计时器支持推进重试时间。
+支持 `host.environment()`、`preferences.get()`、`storage.migrate` 事件，以及 `host.environmentChanged` 和 `preferences.changed` 事件。清单声明 `dataVersion`、`preferences` 和相应必需能力；迁移在隔离存储副本中执行，不能联网或访问凭证。`createScenario` 为权限、账号、离线、凭证失效、宿主环境和偏好提供显式测试替身，虚拟计时器支持推进重试时间。
 
-0.9.0 增加 `pageChrome`：清单页面的 `appBar.title` 与 `appBar.actions` 引用共享页面状态的 RFW 组件。按钮支持全宽，图标按钮支持加载、禁用、选中，统计支持骨架加载。
+支持 `pageChrome`：清单页面的 `appBar.title` 与 `appBar.actions` 引用共享页面状态的 RFW 组件。按钮支持全宽，图标按钮支持加载、禁用、选中，统计支持骨架加载。
 
-0.14.0 增加 `accountDataMigration` 和 `storage.partition` 类型，用于插件自行将旧公共数据归入账号分区。事件只在隔离迁移引擎执行，接收并返回数据副本，不会给运行中的插件开放跨账号存储。
+支持 `accountDataMigration` 和 `storage.partition` 类型，用于插件自行将旧公共数据归入账号分区。事件只在隔离迁移引擎执行，接收并返回数据副本，不会给运行中的插件开放跨账号存储。
 
 
 ## 查询缓存和分页
 
-0.15.0 增加 storageScopes 与 extendedPages 类型。存储范围由清单显式声明，账号范围需要 identity 权限。默认范围只影响省略 options.scope 的调用，不允许越过清单访问其他范围。
+支持 storageScopes 与 extendedPages 类型。存储范围由清单显式声明，账号范围需要 identity 权限。默认范围只影响省略 options.scope 的调用，不允许越过清单访问其他范围。
 
 数据工具从 @fluxdo/plugin-sdk/data 导入，可由 Vite 打包进最终脚本：
 
@@ -63,4 +63,4 @@ readPage 是插件自己的读取函数，须返回 {items, nextCursor}，末页
 
 取消是逻辑取消：旧响应不会写回数据，但已经发出的底层请求不保证物理中断。QueryCancelledError 通常在切换账号或离页时发生，应由业务忽略或转为中性状态。缓存不会持久化，也不会自动重试写操作；持久化仍使用受控 storage API。
 
-0.16.0 增加 timelinePages 和 inputOptions。TimelinePage 以稳定条目 ID 维护历史阅读位置、最新定位和懒加载；TextInput 支持公共圆角外壳、多行增长、长度限制与发送只读状态。组件参数由宿主注册表生成，并在应用开发中心提供交互预览。
+支持 timelinePages 和 inputOptions。TimelinePage 以稳定条目 ID 维护历史阅读位置、最新定位和懒加载；TextInput 支持公共圆角外壳、多行增长、长度限制与发送只读状态。组件参数由宿主注册表生成，并在应用开发中心提供交互预览。

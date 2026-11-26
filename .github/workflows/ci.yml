@@ -38,7 +38,7 @@ jobs:
         with:
           repository: ${{ steps.host.outputs.repository }}
           # contract.hostReference.commit 记录最早兼容宿主。联调使用包含最新回归用例的提交。
-          ref: 9834ca293ccbc9fa9ab5fdf89f70d57472fddb7c
+          ref: d2b4f63437abee2c3e3bacf7a33ba022d302c15f
           path: app
           submodules: recursive
           persist-credentials: false
@@ -56,7 +56,10 @@ jobs:
         working-directory: tools
       - name: Prepare host dependencies and localization
         working-directory: app
-        run: dart tool/project_prep.dart test
+        run: |
+          flutter pub get
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          dart tool/project_prep.dart test
       - name: Prepare test assets and tool path
         run: |
           New-Item -ItemType Directory -Force app/assets/certs | Out-Null
