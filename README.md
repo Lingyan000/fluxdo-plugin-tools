@@ -72,15 +72,15 @@ pnpm test 会把三个包制成实际 tgz，在仓库外安装脚手架和依赖
 
 ## 论坛与底栏页面
 
-按需授权支持、自适应集合组件和表单完成后关闭当前弹层的能力。可先调用 `ctx.api.permissions.status()`，在用户选择功能时用 `request()` 申请缺少的范围。详见[权限与返回值](https://github.com/Lingyan000/fluxdo/blob/codex/ld-store-native-checkout/docs/plugins/api.md#用户关闭权限时)。
+按需授权支持、自适应集合组件和表单完成后关闭当前弹层的能力。可先调用 `ctx.api.permissions.status()`，在用户选择功能时用 `request()` 申请缺少的范围。详见[权限与返回值](https://github.com/Lingyan000/fluxdo/blob/dev/docs/plugins/api.md#用户关闭权限时)。
 
-支持 schema 12：独立任务、用户批准的系统后台刷新、本地通知、底栏角标和跨实例条件写入。开发会话不安排系统任务。用 `createPluginHarness` 模拟 `task.run`，打包安装后验证系统唤醒与通知点击。参见[完整接口](https://github.com/Lingyan000/fluxdo/blob/codex/ld-store-native-checkout/docs/plugins/api.md#定时任务通知与角标)。
+支持 schema 12：独立任务、用户批准的系统后台刷新、本地通知、底栏角标和跨实例条件写入。开发会话不安排系统任务。用 `createPluginHarness` 模拟 `task.run`，打包安装后验证系统唤醒与通知点击。参见[完整接口](https://github.com/Lingyan000/fluxdo/blob/dev/docs/plugins/api.md#定时任务通知与角标)。
 
 支持 schema 11 清单校验、`forum.read`/`forum.open` 类型和 [用户动态示例](examples/forum-activity/)。元宇宙首页与插件声明的页面都可由用户添加到底栏；开发会话只预览，不改正式导航。宿主需要支持 `navigationEntries` 与 `forumRead`。
 
-示例使用当前账号读取发帖和回复，点击后打开原生话题。论坛请求由可见页面或有效任务的 `ctx.api` 发起，只能使用清单批准的 `profiles`、`activity`、`following` 权限。业务名单、聚合与刷新策略由插件编写。具体协议和限流规则见 [宿主 API 文档](https://github.com/Lingyan000/fluxdo/blob/codex/ld-store-native-checkout/docs/plugins/api.md#论坛只读接口与原生导航)。
+示例使用当前账号读取发帖和回复，点击后打开原生话题。论坛请求由可见页面或有效任务的 `ctx.api` 发起，只能使用清单批准的 `profiles`、`activity`、`following` 权限。业务名单、聚合与刷新策略由插件编写。具体协议和限流规则见 [宿主 API 文档](https://github.com/Lingyan000/fluxdo/blob/dev/docs/plugins/api.md#论坛只读接口与原生导航)。
 
-实时服务可使用 `ctx.api.streams.open/close`。声明 `eventStreams`，通过 `stream.event` 与 `stream.state` 接收数据和连接状态，隐藏界面会暂停，恢复时重连。协议和完整限制见[宿主 SSE 文档](https://github.com/Lingyan000/fluxdo/blob/codex/ld-store-native-checkout/docs/plugins/api.md#sse-实时事件)。
+实时服务可使用 `ctx.api.streams.open/close`。声明 `eventStreams`，通过 `stream.event` 与 `stream.state` 接收数据和连接状态，隐藏界面会暂停，恢复时重连。协议和完整限制见[宿主 SSE 文档](https://github.com/Lingyan000/fluxdo/blob/dev/docs/plugins/api.md#sse-实时事件)。
 
 ## 数据迁移、偏好与发行
 
@@ -114,7 +114,7 @@ pack 与 market-entry 接受 --key private.pem，轮换时另提供 --previous-k
 
 设备连上开发会话后，运行 `fluxdo doctor --pair '<配对地址>'` 查看连接、能力、权限、可见界面尺寸、字段类型、列表数量及 API 调用耗时。不会替换设备连接或读取正文、文件、存储值和凭证。配对地址是临时凭证，请勿写入仓库或公开日志。
 
-SDK 提供临时附件、上传进度与取消、私密图片预览、hCaptcha 原生面板和清单翻译。附件不返回本地路径或文件字节，业务网络仍由宿主按权限执行。具体参数及平台边界见应用的 [API 文档](https://github.com/Lingyan000/fluxdo/blob/codex/ld-store-native-checkout/docs/plugins/api.md)。
+SDK 提供临时附件、上传进度与取消、私密图片预览、hCaptcha 原生面板和清单翻译。附件不返回本地路径或文件字节，业务网络仍由宿主按权限执行。具体参数及平台边界见应用的 [API 文档](https://github.com/Lingyan000/fluxdo/blob/dev/docs/plugins/api.md)。
 
 新增账号分区时，声明 `accountDataMigration` 并实现 `storage.partition`。处理器在隔离引擎接收 `{accountId, legacy, account}`，返回新的 `{legacy, account}`；仅可调用 `host.features` 与 `crypto.sha256`，无法联网或写正式存储。它须保留未知数据并拒绝冲突，成功后由宿主原子提交。普通页面无法访问其他账号的数据，迁移前需要 identity 权限。
 
@@ -125,3 +125,9 @@ SDK 提供临时附件、上传进度与取消、私密图片预览、hCaptcha �
 SDK 的 @fluxdo/plugin-sdk/data 提供 createQueryClient 和 createPagedList：同键请求合并、有容量上限的缓存、按标签失效、局部更新、分页去重和迟到结果丢弃。调用方仍决定读取什么、缓存多久以及账号和页面生命周期；工具不自动重放下单、发送消息等写请求。类型和使用例见 [SDK 说明](packages/sdk/README.md)。
 
 独立 JS 源码可在 fluxdo.config.json 中设置 runtimeHelpers: ['data']，本地化编译器将同版实现内联为 fluxdoData。正式运行不下载脚本。超过 16 页的插件需声明 extendedPages，最多 32 页。
+
+### 无线扫码配对
+
+`fluxdo dev --lan 本机IPv4` 将临时配对地址与终端二维码写入 stderr，stdout 保留设备 JSON 日志。Android、iOS 与 macOS 可在 App 开发中心选择“扫码配对”，确认地址后连接并审阅插件权限；Windows/Linux 使用粘贴。二维码包含临时令牌和证书指纹，不应截图公开或写入仓库。`--stdio` 保持纯开发协议输出，不能同时使用 `--lan`。
+
+`fluxdo market-entry` 从实际签名包生成权限与发布者预览，预览不替代安装时的验签与权限审阅。
