@@ -407,7 +407,10 @@
           "storageScopes",
           "extendedPages",
           "timelinePages",
-          "inputOptions"
+          "inputOptions",
+          "horizontalScroll",
+          "timelineAlignment",
+          "contentEmphasis"
         ]
       },
       "uniqueItems": true

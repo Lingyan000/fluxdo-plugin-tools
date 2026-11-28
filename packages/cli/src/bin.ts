@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import {toString as renderQr} from 'qrcode';
 import {inspectDevice} from './diagnostics.js';
 import {localizeProject} from '../localization/compiler.mjs';
 import {parseArgs} from 'node:util';
@@ -66,7 +67,8 @@ try{
             onStatus:message=>console.error(message),
             onLog:entry=>console.log(JSON.stringify(entry)),
           });
-          console.error('在 App 开发中心粘贴配对地址：\n'+server.url);
+          console.error('在 App 开发中心扫码或粘贴配对地址：\n'+server.url);
+          if(values.lan)process.stderr.write(await renderQr(server.url,{type:'terminal',small:true,errorCorrectionLevel:'M'}));
           if(!values.lan)console.error(`Android USB 转发：adb reverse tcp:${server.port} tcp:${server.port}`);
           await new Promise<void>(done=>{
             const close=()=>{void server.close().then(done);};

@@ -29,6 +29,14 @@ test('RFW 参数契约覆盖士多和动态订阅的实际界面',async()=>{
  assert.ok(validateUi(activity.files[activity.manifest.ui]).includes('Following'));
 });
 
+test('首发草稿包使用的组件与参数可由同版 SDK 校验',async t=>{
+ const root=process.env.FLUXDO_APP;if(!root){t.skip('原生宿主联调提供草稿包');return;}
+ for(const name of ['ld-store','activity-feed','quick-notes']){
+  const bundle=JSON.parse(await readFile(root+'/test/fixtures/metaverse/release/'+name+'-1.0.0.fluxplugin','utf8'));
+  assert.ok(validateUi(bundle.files[bundle.manifest.ui]).length>0);
+ }
+});
+
 test('旧发行包建立的订阅、未读和缓存可由新发行包直接使用', async t => {
   const app = process.env.FLUXDO_APP;
   if (!app) { t.skip('原生宿主联调提供发行包'); return; }

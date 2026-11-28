@@ -1,3 +1,4 @@
+import {marketPreview} from './market-preview.js';
 import {readFile, writeFile, mkdir, realpath, rename, rm} from 'node:fs/promises';
 import {resolve, relative, isAbsolute, dirname, sep} from 'node:path';
 import {createRequire} from 'node:module';
@@ -173,7 +174,8 @@ export async function createMarketEntry(directory:string,repository:string,tag:s
   if(options.channel && !['stable','preview'].includes(options.channel))fail('发布渠道无效');
   if(options.channel==='stable'&&!!prerelease(m.version))fail('测试版本不能声明稳定渠道');
   const file=result.path.split(/[\\/]/).at(-1)!;
-  const entry={id:m.id,name:m.name,version:m.version,apiVersion:m.apiVersion,author:m.author,
+  const preview=marketPreview(JSON.parse(await readFile(result.path,'utf8')));
+  const entry={...preview,id:m.id,name:m.name,version:m.version,apiVersion:m.apiVersion,author:m.author,
     summary:m.description??m.name,description:m.description??m.name,repository:repo.href.replace(/\/$/,''),
     packageUrl:repo.href.replace(/\/$/,'')+'/releases/download/'+tag+'/'+encodeURIComponent(file),
     locales:Object.fromEntries(Object.entries((m as any).locales??{}).map(([locale,value])=>{const v=value as Record<string,string>;return [locale,{...(v.name?{name:v.name}:{}),...(v.description?{summary:v.description,description:v.description}:{})}];})),

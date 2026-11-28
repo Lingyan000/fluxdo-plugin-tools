@@ -23,3 +23,15 @@ test('CLI 标准流提供版本握手、模块请求和断开释放',{timeout:15
  const reply=await until(p=>p.event==='vite:invoke');assert.deepEqual(reply.data.data.result,[]);
  child.stdin.end();assert.equal(await exited,0);
 });
+
+test('LAN 配对二维码写入 stderr，stdout 保留结构化设备日志',{timeout:20000},async t=>{
+ const temp=await mkdtemp(join(tmpdir(),'fluxdo-lan-cli-'));
+ const project=await createPlugin({directory:join(temp,'sample')});
+ const child=spawn(process.execPath,[join(root,'packages/cli/dist/bin.mjs'),'dev',project,'--lan','127.0.0.1','--port','0'],{stdio:['pipe','pipe','pipe'],windowsHide:true});
+ let stderr='',stdout='';child.stderr.on('data',chunk=>stderr+=chunk);child.stdout.on('data',chunk=>stdout+=chunk);
+ const exited=new Promise(resolve=>child.once('exit',resolve));
+ t.after(async()=>{child.kill();await exited;await rm(temp,{recursive:true,force:true,maxRetries:6,retryDelay:250});});
+ for(let i=0;i<200&&!stderr.includes('▄');i++)await new Promise(resolve=>setTimeout(resolve,50));
+ assert.match(stderr,/fluxdo-dev:\/\/127\.0\.0\.1:\d+\?key=[\w-]{32}&cert=[a-f0-9]{64}/);
+ assert.match(stderr,/[▄▀█]/);assert.equal(stdout,'');
+});

@@ -1,127 +1,101 @@
 # FluxDO 插件工具
 
-FluxDO 原生插件的 CLI、项目脚手架和 TypeScript SDK。插件作者只需 Node 24.11+，无需安装 Flutter 或克隆应用源码。
+用 TypeScript / JavaScript 编写逻辑，以 RFW 驱动 Flutter 原生界面。CLI、脚手架和 SDK 同仓维护；插件作者只需 Node 24.11+，不需要 Flutter 或应用源码。账号、付款、原生运行时与权限检查由 [FluxDO 宿主](https://github.com/Lingyan000/fluxdo)提供，业务插件和市场条目在 [fluxdo-plugins](https://github.com/Lingyan000/fluxdo-plugins)。
 
 ## 创建插件
 
-0.16.0 通过 GitHub Release 分发三个独立 npm 格式包，尚未发布到 npm registry。
+首发候选为 **1.0.0，目前仍是草稿**。以下固定 URL 在 v1.0.0 公开后才可使用；发行前用同批本地 tgz 验证。三个 npm 格式包通过同一个 GitHub Release 分发，npm registry 尚未发布。
 
-~~~sh
-npx --yes --package=https://github.com/Lingyan000/fluxdo-plugin-tools/releases/download/v0.16.0/create-fluxdo-plugin-0.16.0.tgz create-fluxdo-plugin my-plugin --id com.example.myplugin
+```sh
+npx --yes --package=https://github.com/Lingyan000/fluxdo-plugin-tools/releases/download/v1.0.0/create-fluxdo-plugin-1.0.0.tgz create-fluxdo-plugin my-plugin --id com.example.myplugin --template basic
 cd my-plugin
 npm install
 npm run check
 npm test
 npm run dev
-# 发布时
-npm run pack:plugin
-~~~
+```
 
-也支持 pnpm。脚手架会把固定版本的 CLI 和 SDK Release 地址写入项目依赖。提交生成的 lockfile 后，可用 npm ci 或 pnpm install --frozen-lockfile 重现安装。
+`basic` 包含计数卡片、确认、存储和提示；`localized` 在此基础上加入四语与 SDK 翻译函数。默认不申请网络或账号权限。生成项目将同版 CLI/SDK 的固定 Release URL 写入依赖，提交锁文件后用 `npm ci` 或 `pnpm install --frozen-lockfile` 复现安装，不会在运行时拉取 main 分支模板。
 
-在 FluxDO 插件管理中导入 dist 目录的 .fluxplugin 文件。基础模板包含原生计数卡片、用户确认、存储与提示；默认不申请网络和账号权限。
+新作者先阅读[开发指南](https://github.com/Lingyan000/fluxdo/blob/dev/docs/plugins/README.md)，查看最小可运行页面与版本字段说明。
 
-## 仓库边界
+## 常用命令
 
-| 包/目录 | 职责 |
+在项目目录用 `npx --no-install fluxdo <命令>`，或使用脚手架提供的 npm scripts。也支持 pnpm。
+
+| 命令 | 用途 |
 | --- | --- |
-| packages/cli | 检查、构建、测试、打包、设备配对；Vite 模块服务和开发运行器 |
-| packages/create-fluxdo-plugin | 交互/非交互创建项目，模板随包发布 |
-| packages/sdk | 公开 API 类型、清单和组件契约、模拟宿主测试工具 |
-| test | 独立安装、生成项目、包格式和开发连接回归 |
-| docs | 工具、协议和发布说明 |
+| `check` | TypeScript、清单、完整 RFW 语法、静态组件参数与嵌套字段检查 |
+| `build` | 输出单文件 JS、UI 和清单到 dist；失败保留旧产物 |
+| `test` | 构建后运行 test/*.test.mjs，外部 API 需显式 mock |
+| `dev` | 回环原生预览与 HMR；`--lan IPv4` 无线配对 |
+| `pack --key ../private.pem` | 重新检查构建并生成签名 .fluxplugin，输出 SHA-256；省略密钥生成无签名包 |
+| `market-entry --repository URL --tag TAG --key ../private.pem` | 同一次构建生成包和市场条目，支持 `--channel stable\|preview` |
+| `doctor` / `doctor --pair '地址'` | 检查 Node，或诊断已连接宿主；传项目目录时另检查项目 |
+| `localize` / `localize --check` | 生成或检查独立旧脚本的 JS/RFW/清单译文 |
 
-Flutter、QuickJS 原生实现、RFW 渲染、权限和支付留在 [FluxDO 应用](https://github.com/Lingyan000/fluxdo)。GitHub 市场条目和具体服务插件留在 [fluxdo-plugins](https://github.com/Lingyan000/fluxdo-plugins)。
+生成本地安装包用 `npm run pack:plugin`，在应用导入 `dist/*.fluxplugin`。发布时优先使用脚手架的手动 `plugin-release.yml`，或按[发布与排错](https://github.com/Lingyan000/fluxdo/blob/dev/docs/plugins/publishing-and-troubleshooting.md)操作。`market-entry` 会重新构包，上传包与条目必须来自同一次生成。权限和作者指纹预览从实际包推导，安装时仍会验签和审阅权限。
 
-## 可用命令
+CLI 内置从官方 Dart RFW parser 编译的校验器，插件作者无需 Dart；动态引用与真实布局仍需应用预览。Vite 管理开发模块依赖与 HMR，tsdown 构建工具自身，正式插件不携带 Vite 或开发服务。
 
-- fluxdo check：TypeScript、清单、完整 RFW 语法与组件参数名检查。
-- fluxdo build：生成单文件 JS、UI 描述和清单到 dist，失败保留旧产物。
-- fluxdo pack：重新检查构建，生成 .fluxplugin 并输出 SHA-256。
-- fluxdo test：构建后运行 test/*.test.mjs，模板已有确认、取消和存储测试。
-- fluxdo market-entry --repository URL --tag TAG：生成包摘要与 GitHub 市场条目草稿。
-- fluxdo doctor：检查 Node 环境。
-- fluxdo dev：启动回环设备服务；在 App 开发中心粘贴配对地址。
-- fluxdo dev --stdio：提供版本 1 的模块开发消息通道，供宿主适配器和集成测试连接。
+## App 原生预览与热更新
 
-Vite 负责开发模块依赖和 HMR；tsdown 构建工具自身；正式插件不携带 Vite。CLI 使用从应用编译的官方 RFW 解析器，并校验从生产组件读取位置导出的参数名、静态类型和嵌套字段，错误定位到组件、路径与行列。动态值和真实布局仍在 App 预览中验证。
+运行 `npm run dev`，在「元宇宙 → 插件管理 → 更多 → 开发中心 → 教程 → 连接开发工具」粘贴地址，也可用右上角快捷入口。审阅后启动临时实例，正式插件的代码、数据和凭据保持隔离。
 
-## App 原生预览
+### 同机与 USB
 
-电脑启动 pnpm dev。在 FluxDO「插件管理 → 开发中心 → 连接开发工具」粘贴 CLI 输出的配对地址，审阅权限后启动临时实例。开发中心入口图标位于右上角。
+默认监听 `127.0.0.1:5174`，桌面在同一电脑直接连接。Android USB 先运行 `adb reverse tcp:5174 tcp:5174`。用 `--port` 改端口时转发端口要对应。iOS 真机使用下方无线连接。
 
-默认服务监听 127.0.0.1：Android 通过 USB 连接并运行 adb reverse tcp:5174 tcp:5174，桌面与开发工具在同一电脑直接连接。端口可用 --port 指定，转发端口需要一致。Android、iOS 和桌面的无线连接见下方「加密无线配对」；iOS 真机验收仍待完成。
+### 无线开发与扫码配对
 
-保存 TS 后替换接受 HMR 的模块；保存 RFW 后更新原生组件库，保留页面数据。新模块成功执行后才移除旧事件和定时器。语法或界面校验失败保留上一版本；顶层业务副作用无法回滚，初始化应保持可重复执行。
+```sh
+npm run dev -- --lan 192.168.1.10
+```
 
-异步事件、宿主调用、Connect 或支付未结束时暂缓自动更新。整图重载、断线恢复或清单变化需要 App 中重新审阅启动；不会自动重新执行入口。关闭开发会话会销毁引擎、临时数据和内存凭证，正式安装插件不受影响。
+替换为开发机实际 IPv4。CLI 仅绑定指定网卡，终端二维码和配对地址写 stderr，stdout 保留设备 JSON 日志。Android/iOS/macOS 可扫码，Windows/Linux 或相机不可用时粘贴。扫码只填写地址，仍须主动连接和审阅权限。
 
-日志只回传当前开发运行实例，经应用统一脱敏，QuickJS 模块堆栈映射到 TS 源位置。普通插件不获得开发连接、Node、DOM 或自由联网能力。详见 [开发协议](docs/development-protocol.md)。
+配对使用临时 TLS 证书，应用按地址中的 SHA-256 指纹校验后发送临时令牌。仅在可信局域网开放端口；iOS 首次连接需允许本地网络，网络隔离或防火墙可能阻止连接。重启服务必须重新扫码。地址含临时凭据，不公开截图、不写入仓库或日志。
 
-## 维护与验证
+连接后运行：
 
-~~~sh
-pnpm install --frozen-lockfile
-pnpm test
-pnpm pack:release
-~~~
+```sh
+npx --no-install fluxdo doctor --pair '完整配对地址'
+```
 
-pnpm test 会把三个包制成实际 tgz，在仓库外安装脚手架和依赖，再执行创建、检查、构建、打包及模拟事件。无需 Dart；真实 QuickJS 回归由应用仓库的 tool/plugin_tools 执行。CI 对 Windows、macOS、Linux 运行同样的 Node 测试，另按 SDK 契约固定应用提交，运行真实 QuickJS 和 App 配对集成。
+诊断只返回能力、权限、可见界面尺寸、字段类型、列表数量与调用耗时；不读取正文、文件、存储值或凭证，不抢占现有设备连接。`dev --stdio` 留给宿主适配与测试，输出纯版本 1 开发协议，不能与 `--lan` 同用。
 
-[发布流程](docs/releasing.md)说明三个包的版本联动、模板依赖、发布物校验及宿主兼容测试。
+### 更新与状态
 
-## 论坛与底栏页面
+- TS 保存后替换接受 HMR 的模块；RFW 保存后更新原生组件库并保留界面数据。
+- 新模块成功执行后才撤销旧事件和定时器。语法或界面错误保留上一版本；自建资源用 `import.meta.hot.dispose` 清理，需要保留的模块数据用 `hot.data`。
+- 顶层外部副作用无法回滚。异步事件、宿主调用、Connect 或付款未完成时暂缓更新，不重放外部写操作。
+- 完整模块图重载、断线恢复和清单变化需要重新审阅启动，不保证任意模块状态无损恢复。
+- 关闭会话销毁临时数据和内存凭据。日志只回传当前实例并脱敏，QuickJS 堆栈映射到 TS 位置。
 
-按需授权支持、自适应集合组件和表单完成后关闭当前弹层的能力。可先调用 `ctx.api.permissions.status()`，在用户选择功能时用 `request()` 申请缺少的范围。详见[权限与返回值](https://github.com/Lingyan000/fluxdo/blob/codex/ld-store-native-checkout/docs/plugins/api.md#用户关闭权限时)。
+协议见 [开发协议](docs/development-protocol.md)，宿主行为见[开发工具与热更新](https://github.com/Lingyan000/fluxdo/blob/dev/docs/plugins/development-tooling.md)。开发连接不会赋予普通插件 Node、DOM 或自由联网能力。系统后台、通知与底栏入口须通过安装包验证；真实摄像头与账号由接入方验收。
 
-0.4.0 支持 schema 12：独立任务、用户批准的系统后台刷新、本地通知、底栏角标和跨实例条件写入。开发会话不安排系统任务。用 `createPluginHarness` 模拟 `task.run`，打包安装后验证系统唤醒与通知点击。参见[完整接口](https://github.com/Lingyan000/fluxdo/blob/codex/ld-store-native-checkout/docs/plugins/api.md#定时任务通知与角标)。
+## 核心能力速览
 
-0.3.0 新增 schema 11 清单校验、`forum.read`/`forum.open` 类型和 [用户动态示例](examples/forum-activity/)。元宇宙首页与插件声明的页面都可由用户添加到底栏；开发会话只预览，不改正式导航。宿主需要支持 `navigationEntries` 与 `forumRead`。
+| 场景 | 能力与参考 |
+| --- | --- |
+| 按需权限 | `permissions.status/request`，用户点击时申请缺少的范围；[用户关闭权限时](https://github.com/Lingyan000/fluxdo/blob/dev/docs/plugins/api.md#用户关闭权限时) |
+| 论坛与底栏 | `forum.read/open`、`pages[].navigation`，声明候选后由用户添加；[接口与限流](https://github.com/Lingyan000/fluxdo/blob/dev/docs/plugins/api.md#论坛只读接口与原生导航)、[动态示例](examples/forum-activity/) |
+| 原生 UI | 自适应集合、时间线、输入、页面标题栏、头像按钮、骨架、替换导航与弹层关闭；[组件](https://github.com/Lingyan000/fluxdo/blob/dev/docs/plugins/components.md)、[标题栏](https://github.com/Lingyan000/fluxdo/blob/dev/docs/plugins/components.md#页面标题栏) |
+| 后台与通知 | 独立任务、条件写、通知状态和角标；开发会话不安排系统任务；[调度边界](https://github.com/Lingyan000/fluxdo/blob/dev/docs/plugins/api.md#定时任务通知与角标) |
+| 实时消息 | `streams.open/close`，可见界面接收事件，隐藏暂停；[SSE](https://github.com/Lingyan000/fluxdo/blob/dev/docs/plugins/api.md#sse-实时事件) |
+| 存储与迁移 | `storageScopes` 显式 shared/account；账号区需要 identity。`dataMigrations` / `accountDataMigration` 在隔离副本迁移，不联网或读其他账号；[存储作用域](https://github.com/Lingyan000/fluxdo/blob/dev/docs/plugins/api.md#普通存储作用域)、[迁移](https://github.com/Lingyan000/fluxdo/blob/dev/docs/plugins/automatic-updates.md#版本恢复与数据迁移) |
+| 偏好与语言 | `host.environment`、`preferences.get`、清单翻译与语言/偏好变化事件；[示例](examples/data-migration/)、[API](https://github.com/Lingyan000/fluxdo/blob/dev/docs/plugins/api.md#宿主环境偏好与迁移) |
+| 查询与分页 | `@fluxdo/plugin-sdk/data` 有界缓存、请求合并、tags 失效、分页去重和迟到丢弃；不自动重放写操作；[SDK 示例](packages/sdk/README.md#查询缓存和分页) |
+| 附件与验证 | 临时句柄、受控上传、私密图片与 hCaptcha；不给脚本本地路径或文件字节；[API](https://github.com/Lingyan000/fluxdo/blob/dev/docs/plugins/api.md#临时附件与私密图片) |
 
-示例使用当前账号读取发帖和回复，点击后打开原生话题。论坛请求由可见页面或有效任务的 `ctx.api` 发起，只能使用清单批准的 `profiles`、`activity`、`following` 权限。业务名单、聚合与刷新策略由插件编写。具体协议和限流规则见 [宿主 API 文档](https://github.com/Lingyan000/fluxdo/blob/codex/ld-store-native-checkout/docs/plugins/api.md#论坛只读接口与原生导航)。
+TypeScript 本地化使用 `createTranslator` 与 `host.environmentChanged`，服务端用户内容不翻译。独立旧 JS 可配置 `localization: {baseLocale,script,ui}` 交给 `localize`；`runtimeHelpers: ['data']` 将同版数据工具内联为 `fluxdoData`，正式运行不下载代码。
 
-实时服务可使用 `ctx.api.streams.open/close`。声明 `eventStreams`，通过 `stream.event` 与 `stream.state` 接收数据和连接状态，隐藏界面会暂停，恢复时重连。协议和完整限制见[宿主 SSE 文档](https://github.com/Lingyan000/fluxdo/blob/codex/ld-store-native-checkout/docs/plugins/api.md#sse-实时事件)。
+模板使用 schema 12 / API 2。按实际使用声明 `requiredFeatures`，例如 `pageChrome`、`loadingPlaceholders`、`navigationReplacement`、`iconButtonContent`；超过 16 页需要 `extendedPages`，最多 32 页。`credentialClaims` 允许读取 JWT 声明，但声明不是服务端身份验证。完整类型与契约见 [SDK](packages/sdk/README.md)。
 
-## 数据迁移、偏好与发行
+`createScenario` 可控制离线、权限、账号和凭证过期；`createPluginHarness({virtualTimers:true})` 用 `advance` 推进时间，`dispatch` 注入事件。显式 mock 验证业务，不能代替真实宿主的安全检查与系统调度。
 
-SDK 0.14.0 提供 host.environment、preferences.get 与 storage.migrate 类型，以及 [数据迁移与偏好示例](examples/data-migration/)。清单声明 dataVersion 和 pluginPreferences，迁移按账号在副本上执行，成功后才切换，不能联网或操作凭证。
+## 仓库维护与发布
 
-测试工具导出 createScenario，可以控制离线、账号、权限和凭证过期；createPluginHarness({virtualTimers:true}) 的 advance 推进虚拟时间。模拟场景只验证业务，不代替真实宿主隔离与系统调度。
+`packages/cli` 维护命令和开发服务，`packages/create-fluxdo-plugin` 维护随包模板，`packages/sdk` 维护公开类型和可选数据工具。`test` 覆盖独立安装与跨包联调。
 
-pack 与 market-entry 接受 --key private.pem，轮换时另提供 --previous-key old.pem；不传密钥仍生成无签名包。签名绑定规范化清单与资源摘要，宿主用原安装公钥判断连续性，首次信任仍由用户决定。market-entry --channel stable|preview 选择发布渠道，稳定版不能使用预发布版本号。
-
-脚手架的 .github/workflows/plugin-release.yml 经手动触发后校验并创建草稿 Release，带包、摘要和市场条目产物。签名可用仓库 Secrets PLUGIN_SIGNING_KEY 配置，轮换用 PLUGIN_PREVIOUS_SIGNING_KEY；私钥不输出、不进入产物，并从临时目录清理。作者核对草稿后发布。已发布坏版本应在目录标记 withdrawn 或加入 withdrawnVersions，保留原因并发布修复版本，不修改原附件。
-
-页面可声明 `appBar: {title: "PageTitle", actions: "PageActions"}` 并要求 `pageChrome`。插槽引用 RFW 组件，与正文共享数据与事件；返回和关闭由宿主保留。`Button.fullWidth` 提供填满分配区域的操作，`IconButton` 支持 `enabled`、`loading`、`selected`，`Statistics.loading` 显示骨架。
-
-首次取数可声明 `loadingPlaceholders`，使用 `Skeleton`、`SkeletonBox` 和列表/网格的 `loadingPlaceholder`；刷新已有条目时保留内容。完成步骤可声明 `navigationReplacement`，调用 `ctx.api.navigate(page, params, {replace: true})` 或 `prepareNavigation(page, {replace: true})`，返回时跳过已完成页面。替换仅适用于当前插件的普通页面。
-
-恢复服务会话的用户资料可声明 `credentialClaims`，通过 `credentials.status(name, {jwt: true})` 读取 JWT 声明；声明不替代服务端身份验证，也不返回凭证原文。标题栏头像可声明 `iconButtonContent`，用 `IconButton(child: Avatar(...))` 保留按钮提示、触区与键盘交互。
-
-## 无线开发连接
-
-在同一局域网运行 `fluxdo dev --lan 192.168.1.10`，其中地址须为开发机的实际 IPv4 地址。将输出的完整配对地址粘贴到 App 开发中心。Android 无需 adb reverse；iOS 首次使用需要允许本地网络访问。服务仅绑定指定网卡，使用临时 TLS 证书和配对地址中的 SHA-256 指纹，重启服务后须重新配对。开发端口只对可信网络开放。
-
-## npm 分发
-
-所有包具备公开发布配置，`npm.yml` 手动工作流发布经过摘要验证的 GitHub Release 产物。首次发布需要 npm 组织及包名称权限；配置 npm Trusted Publisher 或环境 `npm` 的 `NPM_TOKEN` 后运行。没有完成 npm 发布时继续使用 Release 安装命令。
-
-发布成功后可使用 `npm create fluxdo-plugin@0.16.0 -- my-plugin --distribution npm`，将脚手架依赖指向 npm。默认仍使用 GitHub Release，便于在 npm 尚未配置时使用。npm 发布的版本不可覆盖。
-
-## 本地化和配对诊断
-
-创建时选择 `--template localized`，即可使用 SDK 的 `createTranslator` 配合宿主语言事件更新原生组件。该模板保留 Vite 热替换；服务器返回的用户内容不参与翻译。独立旧脚本可配置 `localization: {baseLocale,script,ui}`，运行 `fluxdo localize` 或 `fluxdo localize --check` 生成、校验 JS/RFW/清单译文；有模块导入的 TypeScript 使用 SDK 翻译函数。
-
-设备连上开发会话后，运行 `fluxdo doctor --pair '<配对地址>'` 查看连接、能力、权限、可见界面尺寸、字段类型、列表数量及 API 调用耗时。不会替换设备连接或读取正文、文件、存储值和凭证。配对地址是临时凭证，请勿写入仓库或公开日志。
-
-SDK 0.13.0 增加临时附件、上传进度与取消、私密图片预览、hCaptcha 原生面板和清单翻译。附件不返回本地路径或文件字节，业务网络仍由宿主按权限执行。具体参数及平台边界见应用的 [API 文档](https://github.com/Lingyan000/fluxdo/blob/codex/ld-store-native-checkout/docs/plugins/api.md)。
-
-新增账号分区时，声明 `accountDataMigration` 并实现 `storage.partition`。处理器在隔离引擎接收 `{accountId, legacy, account}`，返回新的 `{legacy, account}`；仅可调用 `host.features` 与 `crypto.sha256`，无法联网或写正式存储。它须保留未知数据并拒绝冲突，成功后由宿主原子提交。普通页面无法访问其他账号的数据，迁移前需要 identity 权限。
-
-## 显式存储和读取状态
-
-0.16.0 的新模板声明 storageScopes，用 storage.default 选择默认范围，storage.scopes 列出 shared 或 account。账号范围必须声明并获得 identity 权限；通知和后台任务不再决定新插件的存储分区。API 尾部可传 {scope: 'shared'}，例如 ctx.api.storage.get('categories', {scope: 'shared'})。旧清单继续按原规则读取，升级前应阅读宿主数据迁移契约，不能把未归属的私有数据直接当作共享缓存。
-
-SDK 的 @fluxdo/plugin-sdk/data 提供 createQueryClient 和 createPagedList：同键请求合并、有容量上限的缓存、按标签失效、局部更新、分页去重和迟到结果丢弃。调用方仍决定读取什么、缓存多久以及账号和页面生命周期；工具不自动重放下单、发送消息等写请求。类型和使用例见 [SDK 说明](packages/sdk/README.md)。
-
-独立 JS 源码可在 fluxdo.config.json 中设置 runtimeHelpers: ['data']，本地化编译器将同版实现内联为 fluxdoData。正式运行不下载脚本。超过 16 页的插件需声明 extendedPages，最多 32 页。
+维护者从[发布工具包](docs/releasing.md)进入：三包版本联动、仓外 tgz 验证、固定宿主契约、GitHub 草稿及 npm 发布。应用内部实现与真实 QuickJS 回归留在宿主仓，业务插件留在市场仓。

@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: Existing GitHub release tag (v0.x.x)
+        description: 已公开的 GitHub Release 标签（v<版本>）
         required: true
 permissions:
   contents: read
