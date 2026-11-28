@@ -19,3 +19,22 @@ CI 在 Windows、macOS 和 Linux 测试 Node 工具链与打包后的 tgz。SDK 
 1.0.0 是首次正式发行的起点。工具与脚手架的包版本、SDK sdkVersion、模板依赖一起更新；清单 schema、apiVersion、开发消息协议及数据版本各自描述兼容契约，不随产品发行号重编号。开发阶段公开的 0.x 产物保留原标签和摘要，不当作首版功能的逐版发行记录。
 
 发布顺序为工具包、插件包、市场目录。草稿附件尚不可公开下载，不能提前把在线市场或维护依赖改成草稿地址。发行前的仓外测试使用同批本地 tgz；公开后必须再验证模板中的固定 GitHub URL，之后才能更新依赖它的仓库。
+
+## 本地维护与验证
+
+```sh
+pnpm install --frozen-lockfile
+pnpm check
+pnpm test
+pnpm pack:release
+```
+
+测试将三个包制成真实 tgz，在仓库外安装脚手架和依赖，执行创建、检查、构建、打包和模拟事件。Node 测试不要求 Dart；真实 QuickJS 回归由应用的 tool/plugin_tools 执行。CI 覆盖 Windows、macOS、Linux 工具链，以及固定宿主提交的原生配对联调。
+
+根 README 只维护插件作者的创建与预览流程。修改 packages 内源码、模板或 SDK README 后重打三包并核对摘要；只修改仓库根文档无需重打。草稿可更新附件，但公开前 targetCommitish 必须指向审核后的提交，且重新下载核对；已公开版本不覆盖。
+
+## npm 分发
+
+所有包具备公开发布配置，npm.yml 手动工作流发布经过摘要验证的 GitHub Release 产物。首次发布需要 npm 组织及包名称权限；配置 npm Trusted Publisher 或环境 npm 的 NPM_TOKEN 后运行。未配置前继续使用 GitHub Release，不能将草稿或尚未发布的 npm 名称写成可用安装来源。
+
+npm 发布成功后，作者可运行 npm create fluxdo-plugin@1.0.0 -- my-plugin --distribution npm，将模板依赖指向 npm；默认仍为 GitHub Release。npm 版本不可覆盖。
