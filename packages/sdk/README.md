@@ -63,4 +63,4 @@ readPage 是插件自己的读取函数，须返回 {items, nextCursor}，末页
 
 取消是逻辑取消：旧响应不会写回数据，但已经发出的底层请求不保证物理中断。QueryCancelledError 通常在切换账号或离页时发生，应由业务忽略或转为中性状态。缓存不会持久化，也不会自动重试写操作；持久化仍使用受控 storage API。
 
-支持 timelinePages 和 inputOptions。TimelinePage 以稳定条目 ID 维护历史阅读位置、最新定位和懒加载；TextInput 支持公共圆角外壳、多行增长、长度限制与发送只读状态。组件参数由宿主注册表生成，并在应用开发中心提供交互预览。
+支持 `timelinePages`、`inputOptions`、`timelineAlignment`、`horizontalScroll` 和 `contentEmphasis`。TimelinePage 以稳定条目 ID 维护历史阅读位置、最新定位和懒加载；TextInput 支持公共圆角外壳、多行增长、长度限制与发送只读状态。`TimelinePage.shortContentAlignment` 可选择短内容贴顶，默认仍贴底；`HorizontalScroll` 根据实际溢出渐隐边缘，`ContentRow.emphasized` 显式标记重点内容。`CopyButton.iconOnly` 保留复制提示与触区，适合紧凑键值行。组件参数由宿主注册表生成，并在应用开发中心提供交互预览。
